@@ -20,6 +20,7 @@ public class MainMenuUI : MonoBehaviour
         fadeImage.raycastTarget = true;
         StartCoroutine(FadeToBlack());
     }
+    //public void ContinueGame(){}
     public void OpenSettings()
     {
         menuBtn.interactable = false;
@@ -39,7 +40,7 @@ public class MainMenuUI : MonoBehaviour
 
     private IEnumerator FadeToBlack()
     {
-        float duration = 1f;
+        float duration = 0.5f;
         float timer = 0f;
         while (timer < duration)
         {
@@ -48,6 +49,7 @@ public class MainMenuUI : MonoBehaviour
             yield return null;
         }
         fadeController.alpha = 1f;
-        yield return new WaitForSecondsRealtime(1f);
+        yield return new WaitForSecondsRealtime(0.5f);
+        SceneManager.LoadScene("Game View");
     }
 }
