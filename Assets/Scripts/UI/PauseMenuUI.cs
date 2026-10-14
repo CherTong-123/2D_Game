@@ -12,7 +12,12 @@ public class PauseMenuUI : MonoBehaviour
 
     [SerializeField] private CanvasGroup fadeController;
     [SerializeField] private UnityEngine.UI.Image fadeImage;
-    //public void ContinueGame(){}
+    [SerializeField] private GameObject PauseMenu;
+    public void ContinueGame()
+    {
+        PauseMenu.SetActive(false);
+        Time.timeScale = 1f;
+    }
     public void openSetting()
     {
         pauseMenu.interactable = false;
