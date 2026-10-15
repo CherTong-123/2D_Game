@@ -11,7 +11,6 @@ using UnityEngine.UI;
 public class MainMenuUI : MonoBehaviour
 {
     public GameObject settingsPanel;
-    [SerializeField] private CanvasGroup menuBtn;
     
     [SerializeField]private CanvasGroup fadeController;
     [SerializeField]private UnityEngine.UI.Image fadeImage;
@@ -23,13 +22,11 @@ public class MainMenuUI : MonoBehaviour
     //public void ContinueGame(){}
     public void OpenSettings()
     {
-        menuBtn.interactable = false;
         settingsPanel.SetActive(true);
         
     }
     public void CloseSettings()
     {
-        menuBtn.interactable = true;
         settingsPanel.SetActive(false);
     }
     public void QuitGame()
