@@ -3,12 +3,15 @@ Collections;
 using System.
 Collections.Generic;
 using UnityEngine;
-public class em : MonoBehaviour
+public class em : MonoBehaviour, INutrientEater
 {
     // Start is called before the first frame update
+    public void GainEnergy(int amount)               // ← ② 加方法
+    {
+        initialenergy += amount;
+    }
     Rigidbody2D rb;
     private em player;
-    public int pb = 2;//通透性，0，1，2代表无，弱，强
     private float timer;
     public double initialenergy = 64;
     public double movecost = 1, maxenergy = 200, cellcount, skillcost;
@@ -26,6 +29,10 @@ public class em : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (initialenergy >= maxenergy)
+        {
+            initialenergy = maxenergy;
+        }
         movecost = 1 + cellcount * 0.25;
         bool isMoving = rb.velocity.magnitude > 0.01f;
         timer += Time.deltaTime;

@@ -1,34 +1,41 @@
+using System.Collections.Generic;
 using UnityEngine;
-
 /// <summary>
-/// 挂在营养球预制体上。记录类型与能量，被玩家碰到时把能量加到玩家身上。
+/// 挂在营养球预制体上。记录类型与能量，被玩家或敌方细胞碰到时把能量加上去。
 /// 能量：Small=4, Medium=16, Large=64。
+///
+/// 【相比原版改了两处】
+/// 1) 用 INutrientEater 接口代替 CompareTag("Player")，敌人也能吃
+/// 2) 增加静态列表 All，让 AI 找"最近的营养球"不用每帧 FindObjectsOfType
 /// </summary>
 [RequireComponent(typeof(CircleCollider2D))]
 [RequireComponent(typeof(SpriteRenderer))]
 public class Nutrient : MonoBehaviour
 {
+    /// <summary>场上所有活着的营养球。AI 遍历这个列表找最近目标，比 FindObjectsOfType 快很多。</summary>
+    public static readonly List<Nutrient> All = new List<Nutrient>();
     public em.NutrientType type;
     public int energy;
-
+    void OnEnable()
+    {
+        All.Add(this);
+    }
+    void OnDisable()
+    {
+        All.Remove(this);
+    }
     /// <summary>
-    /// 玩家吃到营养球时触发。要求：
-    /// 1) 玩家层为 "Player"，Player 物体上挂了 em.cs（含 public float initialenergy）
-    /// 2) 营养球 Collider2D 勾选 Is Trigger
+    /// 被吃掉时触发。要求：
+    /// 1) 营养球 Collider2D 勾选 Is Trigger（由 NutrientSpawner 运行时设置）
+    /// 2) 吃的一方身上挂了实现 INutrientEater 的脚本（玩家 em / 敌人 EnemyAI）
     /// </summary>
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (!other.CompareTag("Player")) return;
-
-        // 给玩家加能量（反射式调用，避免强耦合；也可改成 GetComponent<em>()）
-        em player = other.GetComponent<em>();
-        if (player != null)
-        {
-            player.initialenergy += energy;
-            Debug.Log($"[Nutrient] 吃到 {type} +{energy} 能量，当前总能量 {player.initialenergy:F1}");
-        }
-
-        // 从生成器里回收并销毁
+        // 谁吃都行 —— 只要它实现了 INutrientEater
+        INutrientEater eater = other.GetComponent<INutrientEater>();
+        if (eater == null) return;
+        eater.GainEnergy(energy);
+        // 从生成器里回收并销毁；没有生成器就直接销毁
         NutrientSpawner spawner = FindObjectOfType<NutrientSpawner>();
         if (spawner != null) spawner.Despawn(gameObject);
         else Destroy(gameObject);
