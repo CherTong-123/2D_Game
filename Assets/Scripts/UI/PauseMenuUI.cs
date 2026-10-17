@@ -12,25 +12,25 @@ public class PauseMenuUI : MonoBehaviour
 
     [SerializeField] private CanvasGroup fadeController;
     [SerializeField] private UnityEngine.UI.Image fadeImage;
-    //public void ContinueGame(){}
+    [SerializeField] private GameObject PauseMenu;
+
+    public void ContinueGame()
+    {
+        PauseMenu.SetActive(false);
+        Time.timeScale = 1f;
+    }
     public void openSetting()
     {
-        pauseMenu.interactable = false;
         settingPanel.SetActive(true);
     }
     public void closeSetting()
     {
-        pauseMenu.interactable = true;
         settingPanel.SetActive(false);
     }
     public void Mainmenu()
     {
         fadeImage.raycastTarget = true;
         StartCoroutine(FadeToBlack());
-    }
-    public void QuitGame()
-    {
-        Application.Quit();
     }
 
     private IEnumerator FadeToBlack()
@@ -39,12 +39,13 @@ public class PauseMenuUI : MonoBehaviour
         float timer = 0f;
         while (timer < duration)
         {
-            timer += Time.deltaTime;
+            timer += Time.unscaledDeltaTime;
             fadeController.alpha = timer / duration;
             yield return null;
         }
         fadeController.alpha = 1f;
         yield return new WaitForSecondsRealtime(0.5f);
-        SceneManager.LoadScene("Mainmenu");
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenu");
     }
 }
