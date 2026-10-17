@@ -14,12 +14,26 @@ public class EnemyBlackboard : MonoBehaviour
     [Header("感知范围")]
     [Tooltip("找玩家 / 营养球的最大距离")]
     public float senseRadius = 15f;
-    [Tooltip("危险物靠到多近才躲")]
+    [Tooltip("危险物靠到多近才躲 —— 进入逃跑状态的距离")]
     public float escapeRadius = 5f;
+    [Tooltip("已经在逃跑后，要跑出多远才脱离。必须 > Escape Radius，否则会在边界反复横跳")]
+    public float fleeExitRadius = 12f;
     [Tooltip("危险物的图层（伤害蛋白、敌意细胞等）")]
     public LayerMask dangerMask;
-    [Tooltip("玩家也算危险吗（近距离时）")]
+    [Tooltip("玩家算不算危险源")]
     public bool playerIsDanger = true;
+    [Tooltip("勾上 = 只有挂了 ThreatMarker 的玩家才算危险（策划要求：带攻击细胞的玩家）\n取消 = 任何玩家都算危险（临时测试用）")]
+    public bool playerNeedsThreatMarker = true;
+    [Header("地图边界")]
+    [Tooltip("勾上后 AI 不会跑出下面的矩形范围")]
+    public bool useBoundary = true;
+    [Tooltip("和 NutrientSpawner 的 mapMin/mapMax 保持一致")]
+    public float mapMinX = -50f;
+    public float mapMaxX = 50f;
+    public float mapMinY = -50f;
+    public float mapMaxY = 50f;
+    [Tooltip("离边界多近就开始往回拐（软引导的宽度）")]
+    public float boundaryMargin = 3f;
     [Header("饥饿值")]
     [Tooltip("当前饥饿值 0~100，越高越饿")]
     public float hunger = 50f;
@@ -39,7 +53,11 @@ public class EnemyBlackboard : MonoBehaviour
     // ---------- 由 EnemyAI 按类型写入的行为开关 ----------
     [HideInInspector] public bool avoidDanger = true;   // 是否远离危险
     [HideInInspector] public bool alwaysHunt = false;  // 是否无视饥饿、主动找玩家
+    // ---------- 内部状态 ----------
     private float playerRefreshTimer;
+    private Transform cachedPlayer;
+    private ThreatMarker cachedPlayerThreat;
+    private bool fleeing;               // 是否正处于逃跑状态（迟滞用）
     void Awake()
     {
         if (rb == null) rb = GetComponent<Rigidbody2D>();
@@ -68,13 +86,15 @@ public class EnemyBlackboard : MonoBehaviour
     {
         // 玩家只有一个，但 FindGameObjectWithTag 有开销，缓存 0.3 秒刷一次
         playerRefreshTimer -= Time.deltaTime;
-        if (playerRefreshTimer > 0f && cachedPlayer != null) return InRange(cachedPlayer);
+        if (playerRefreshTimer > 0f && cachedPlayer != null)
+            return InRange(cachedPlayer);
         playerRefreshTimer = 0.3f;
         GameObject go = GameObject.FindGameObjectWithTag("Player");
         cachedPlayer = go != null ? go.transform : null;
+        // 顺手缓存"威胁标记"组件，用来判断玩家有没有攻击细胞
+        cachedPlayerThreat = (go != null) ? go.GetComponent<ThreatMarker>() : null;
         return InRange(cachedPlayer);
     }
-    private Transform cachedPlayer;
     Transform InRange(Transform t)
     {
         if (t == null) return null;
@@ -102,28 +122,42 @@ public class EnemyBlackboard : MonoBehaviour
         return best;
     }
     /// <summary>
-    /// 找最近的危险物。用 OverlapCircle + 图层，比按标签遍历快得多。
-    /// 想加"伤害蛋白"？给它一个图层，填进 dangerMask 就行，代码不用改。
+    /// 找最近的危险物。
+    ///
+    /// 两个关键设计：
+    /// 1) 双阈值（迟滞）：没在逃时用小半径进入，已在逃时用大半径才脱离。
+    ///    两个半径相同的话，AI 会在边界线上"追→逃→追→逃"每帧切换，
+    ///    两帧速度互相抵消，看起来就像卡死在那个圆圈上。
+    /// 2) 玩家必须"带攻击细胞"（挂了且启用了 ThreatMarker）才算危险，对应策划文档的设定。
     /// </summary>
     Transform FindDanger()
     {
         if (!avoidDanger) return null;
+        // ---- 双阈值：逃跑状态切换用不同的扫描半径 ----
+        float radius = fleeing ? fleeExitRadius : escapeRadius;
+        float sqrMax = radius * radius;
         Transform best = null;
-        float bestSqr = escapeRadius * escapeRadius;
-        if (playerIsDanger && targetPlayer != null)
+        float bestSqr = sqrMax;
+        // ---- 玩家：只有带攻击细胞时才算危险 ----
+        bool playerArmed = !playerNeedsThreatMarker
+                           || (cachedPlayerThreat != null && cachedPlayerThreat.enabled);
+        if (playerIsDanger && playerArmed && targetPlayer != null)
         {
             float sqr = ((Vector2)targetPlayer.position - (Vector2)transform.position).sqrMagnitude;
             if (sqr < bestSqr) { bestSqr = sqr; best = targetPlayer; }
         }
+        // ---- 其它危险物（伤害蛋白等），按图层找 ----
         if (dangerMask.value != 0)
         {
-            Collider2D hit = Physics2D.OverlapCircle(transform.position, escapeRadius, dangerMask);
+            Collider2D hit = Physics2D.OverlapCircle(transform.position, radius, dangerMask);
             if (hit != null)
             {
                 float sqr = ((Vector2)hit.transform.position - (Vector2)transform.position).sqrMagnitude;
                 if (sqr < bestSqr) best = hit.transform;
             }
         }
+        // 记录逃跑状态，供下一帧决定用哪个扫描半径
+        fleeing = (best != null);
         return best;
     }
 }

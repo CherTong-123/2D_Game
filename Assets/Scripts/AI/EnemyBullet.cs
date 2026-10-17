@@ -32,13 +32,13 @@ public class EnemyBullet : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        em player = other.GetComponent<em>();
-        if (player != null)
-        {
-            player.initialenergy -= damage;
-            Debug.Log($"[Bullet] 命中玩家 -{damage}，剩余能量 {player.initialenergy:F1}");
-        }
+        // 主伤害：扣 HP（和近战冲撞走同一套逻辑）
+        maincell cell = other.GetComponent<maincell>();
+        if (cell != null) cell.TakeDamage(damage);
+        // 附带：也扣一点能量（不需要就删掉这两行）
+        em energy = other.GetComponent<em>();
+        if (energy != null) energy.initialenergy -= damage * 0.5;
+        Debug.Log($"[Bullet] 命中玩家 -{damage}");
         Destroy(gameObject);
     }
 }
-
