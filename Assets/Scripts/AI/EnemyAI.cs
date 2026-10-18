@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 /// <summary>策划文档里的五种细胞类型。</summary>
 public enum EnemyType
@@ -390,8 +390,6 @@ public class EnemyAI : MonoBehaviour, INutrientEater
         maincell cell = collision.collider.GetComponent<maincell>();
         if (cell != null) cell.TakeDamage(meleeDamage);
         // 附带：也扣一点能量（不需要就删掉这两行）
-        em energy = collision.collider.GetComponent<em>();
-        if (energy != null) energy.initialenergy -= meleeDamage * 0.5;
         Debug.Log($"[Enemy/{type}] 冲撞玩家 -{meleeDamage}");
     }
     // ================= 调试 =================
