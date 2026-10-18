@@ -970,7 +970,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 266d14849b2e979468a338330a730c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  availableTypes: []
+  availableTypes:
+  - {fileID: 11400000, guid: f064d43e7e0620342891d7d04a9b0d8a, type: 2}
+  - {fileID: 11400000, guid: 5b3c03ce6d374a3e8ecadd1d64800180, type: 2}
+  - {fileID: 11400000, guid: fa406024c8004e619b594a224b309a99, type: 2}
+  - {fileID: 11400000, guid: 6d377a15475c4263845111f4eccff7ff, type: 2}
+  - {fileID: 11400000, guid: 9b54e40254fd4a0791a71ac0d2f5c800, type: 2}
+  - {fileID: 11400000, guid: ab3bea1c8f5f4af0a1fb107aff79145b, type: 2}
+  - {fileID: 11400000, guid: 1bad244d66bb41bbb3e1cc82e4cc4ac5, type: 2}
+  - {fileID: 11400000, guid: 85b02278e2dc4897a5b13cae081955ce, type: 2}
+  - {fileID: 11400000, guid: b612eeef7f494465aa257d811f956ef9, type: 2}
   energy: 50
   energyLimit: 100
   energyUse: 1
@@ -979,8 +988,8 @@ MonoBehaviour:
   mainCellBody: {fileID: 0}
   cellRoot: {fileID: 0}
   baseSortingOrder: 0
-  mainCellType: {fileID: 0}
-  mainCellGrid: {x: 0, y: 0}
+  mainCellType: {fileID: 11400000, guid: 168ccdcdc86e465581f70f2438954568, type: 2}
+  mainCellGrid: {x: -1, y: -1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -991,3 +1000,46 @@ SceneRoots:
   - {fileID: 1829968082}
   - {fileID: 120380389}
   - {fileID: 3495093479639943313}
+  - {fileID: 910000002}
+--- !u!1 &910000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 910000002}
+  - component: {fileID: 910000003}
+  m_Layer: 0
+  m_Name: GameSceneEntry
+  m_TagString: Untagged
+  m_IsActive: 1
+--- !u!4 &910000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+--- !u!114 &910000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 139725fbd2514457a59e23c2cc498ca4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  cellSlotPrefab: {fileID: 7505339059259607637, guid: d7cbd5b80e11d3446bd220b5cac7202a, type: 3}
+  pausePrefab: {fileID: 476774550962076535, guid: 6aab96cca3a0acb40a920de295bb66f5, type: 3}
+  font: {fileID: 11400000, guid: 2d4ef2b2dfa88f74fba0b732f951f0a5, type: 2}

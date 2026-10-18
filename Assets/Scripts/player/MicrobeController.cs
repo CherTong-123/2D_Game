@@ -1,337 +1,258 @@
+// ============================================================================
+// MicrobeController.cs：细胞团的能量、分裂、回收、显示和功能入口。
+// ============================================================================
+using System;
 using System.Collections.Generic;
-using System.Linq;                 // Grid.All.Contains(...) 需要它
 using UnityEngine;
 
-/// <summary>
-/// 玩家的微生物（细胞团）。持有网格数据、能量、以及所有细胞的显示物体。
-///
-/// 职责边界：
-///   - 规则判定交给 CellGrid
-///   - 显示只是"数据 → GameObject"的同步
-///   - 界面通过公开方法操作这里，不直接改数据
-/// </summary>
+/// <summary>挂在玩家根物体上，所有细胞共享同一个刚体。</summary>
+[RequireComponent(typeof(Rigidbody2D), typeof(maincell))]
 public class MicrobeController : MonoBehaviour, INutrientEater
 {
     [Header("细胞类型库")]
-    [Tooltip("分裂界面右侧列表会用这个数组，加新细胞只在这里加")]
     public CellType[] availableTypes;
-
-    [Header("能量")]
-    [Tooltip("当前能量。开局 50")]
-    public float energy = 50f;
-    [Tooltip("能量上限。文档：100 + 100*储能细胞数（储能细胞还没做，先用 100）")]
-    public float energyLimit = 100f;
-    [Tooltip("每秒基础消耗。实际 = energyUse × 64/(63+细胞数) × 移动系数")]
-    public float energyUse = 1f;
-    [Tooltip("静止时的消耗系数（移动时为 1）。文档：移动消耗最多、静止最少")]
-    [Range(0f, 1f)] public float idleCostFactor = 0.25f;
-    [Tooltip("是否随时间掉能量。想暂停测试就取消勾选")]
-    public bool drainEnergy = true;
-
-    [Header("主细胞")]
-    [Tooltip("主细胞直接用现有的 player 时，把 player 拖到这里。\n填了之后：不再生成主细胞的显示物体，网格原点每帧跟随它，整个细胞团一起移动。\n留空则自己生成一个主细胞显示物体（固定在世界上）")]
-    public Transform mainCellBody;
-
-    [Header("表现")]
-    [Tooltip("细胞显示物体的父节点，留空就用自己")]
-    public Transform cellRoot;
-    [Tooltip("贴图的基础 sortingOrder，优先级会在这个基础上叠加")]
-    public int baseSortingOrder = 0;
-
-    [Header("起始")]
-    [Tooltip("开局主细胞的类型")]
     public CellType mainCellType;
-    [Tooltip("开局主细胞所在格")]
-    public Vector2Int mainCellGrid = Vector2Int.zero;
-
+    [Header("能量")]
+    public float energy = 50f;
+    public float energyLimit = 100f;
+    public float energyUse = 1f;
+    [Range(0, 1)] public float idleCostFactor = 0.25f;
+    public bool drainEnergy = true;
+    [Header("显示")]
+    public Transform mainCellBody;
+    public Transform cellRoot;
+    public int baseSortingOrder;
+    public Vector2Int mainCellGrid = new Vector2Int(-1, -1);
     public CellGrid Grid { get; private set; }
-
-    /// <summary>细胞数据变化时触发（分裂、回收、重算），界面可以订阅刷新</summary>
+    public bool IsDead => health.IsDead;
+    public float MovementMultiplier { get; private set; } = 1f;
     public event System.Action Changed;
-
+    public event System.Action Died;
     private readonly Dictionary<PlacedCell, GameObject> views = new Dictionary<PlacedCell, GameObject>();
     private static Sprite whiteSprite;
+    private static Sprite arrowSprite;
     private Rigidbody2D mainRb;
+    private maincell health;
+    private ThreatMarker threat;
+    private CellProteinSystem proteins;
 
-    /// <summary>
-    /// Main Cell Body 自己有没有贴图。
-    /// player 有 SpriteRenderer → 主细胞就用它本身，不再生成。
-    /// 测试用的空物体没有 → 生成一个占位方块，方便看到主细胞在哪。
-    /// </summary>
-    private bool MainBodyHasSprite =>
-        mainCellBody != null && mainCellBody.GetComponent<SpriteRenderer>() != null;
-
-    // ------------------------------------------------------------------
-
-    void Awake()
+    private void Awake()
     {
         Grid = new CellGrid();
+        if (mainCellBody == null) mainCellBody = transform;
         if (cellRoot == null) cellRoot = transform;
-        if (mainCellBody == null) mainCellBody = transform;   // 默认主细胞就是自己
-        mainRb = mainCellBody.GetComponent<Rigidbody2D>();
+        mainRb = GetComponent<Rigidbody2D>();
+        health = GetComponent<maincell>();
+        threat = GetComponent<ThreatMarker>();
+        proteins = new CellProteinSystem(this);
     }
-
-    void Start()
+    private void Start() { if (Grid.Main == null) InitMain(mainCellType, mainCellGrid); }
+    private void Update()
     {
-        if (Grid.CellCount > 0) return;
-
-        // 主细胞 = 玩家自己（mainCellBody）。
-        // 网格里只是登记一条"主细胞数据"，用来算 attach / 尺寸 / 优先级，
-        // 它的显示物体就是 player，不会额外生成。
-        CellType mainType = mainCellType;
-
-        if (mainType == null)
+        if (IsDead || Time.timeScale == 0f) return;
+        if (drainEnergy)
         {
-            // 没配置就运行时造一个默认主细胞，保证"player 就是主细胞"零配置可用
-            mainType = ScriptableObject.CreateInstance<CellType>();
-            mainType.id = "main";
-            mainType.displayName = "主细胞";
-            mainType.hp = 100;
-            mainType.cellsize = 1;
-            mainType.pmt = 0;
-            mainType.attach = true;
-            mainType.cost = 0;
-            mainType.placeholderColor = new Color(1f, 0.65f, 0.2f, 0.95f);
-
-            Debug.Log("[Microbe] 未配置 Main Cell Type，已自动使用默认主细胞（1×1 / 可附着 / 花费 0）");
+            float use = energyUse * 64f / (63f + Grid.CellCount);
+            energy = Mathf.Max(0, energy - use * (mainRb.velocity.sqrMagnitude > 0.0001f ? 1 : idleCostFactor) * Time.deltaTime);
         }
-
-        InitMain(mainType, mainCellGrid);
+        proteins.Tick(Time.deltaTime);
+        if (Input.GetKeyDown(KeyCode.E)) proteins.ReleaseProducers();
+        if (Input.GetKeyDown(KeyCode.F)) proteins.FireSprayers();
+    }
+    private void LateUpdate()
+    {
+        if (Grid.Main == null) return;
+        SyncTransform();
+        foreach (var pair in views) UpdateView(pair.Key, pair.Value);
+    }
+    private void SyncTransform()
+    {
+        Grid.angle = mainCellBody.eulerAngles.z;
+        var main = Grid.Main;
+        Vector2 localCenter = ((Vector2)main.anchor + (Vector2)main.type.FootprintSize(main.rotation) * 0.5f) * CellGrid.CellSize;
+        Grid.origin = (Vector2)mainCellBody.position - CellGrid.Rotate(localCenter, Grid.angle);
     }
 
-    void Update()
+    // ================================================================
+    // 分裂、旋转和回收
+    // ================================================================
+    public void InitMain(CellType type, Vector2Int anchor)
     {
-        // 主细胞 = 玩家物体时，网格原点跟着玩家走，整个细胞团一起移动
-        if (mainCellBody != null && Grid != null && Grid.Main != null)
-            SyncOriginToMainBody();
-
-        if (!drainEnergy) return;
-
-        // 和原来 em 一样的算法：移动时消耗最多，静止时最少
-        float use = energyUse * (64f / (63f + Mathf.Max(1, Grid.CellCount)));
-        bool moving = mainRb != null && mainRb.velocity.magnitude > 0.01f;
-        energy -= use * (moving ? 1f : idleCostFactor) * Time.deltaTime;
-
-        energy = Mathf.Clamp(energy, 0f, energyLimit);
-    }
-
-    /// <summary>吃到营养球时由 Nutrient 调用</summary>
-    public void GainEnergy(int amount)
-    {
-        energy = Mathf.Min(energy + amount, energyLimit);
-        Debug.Log($"[Microbe] 吃到 +{amount}，能量 {energy:F1}/{energyLimit:F0}，细胞数 {Grid.CellCount}");
-    }
-
-    /// <summary>把网格原点对齐到主细胞位置</summary>
-    void SyncOriginToMainBody()
-    {
-        Vector2 desired = (Vector2)mainCellBody.position
-                        - CellGrid.SquareLocal(Grid.Main.anchor);
-
-        if ((desired - Grid.origin).sqrMagnitude > 0.000001f)
+        if (mainCellBody == transform)
         {
-            Grid.origin = desired;
-            RepositionViews();
+            // 主体显示单独缩放，根物体保持单位缩放，避免附属细胞转向时变形。
+            transform.localScale = Vector3.one;
+            var original = GetComponent<SpriteRenderer>();
+            if (original != null) original.enabled = false;
+            var visual = new GameObject("MainCellBody");
+            visual.transform.SetParent(transform, false);
+            var renderer = visual.AddComponent<SpriteRenderer>();
+            renderer.sprite = type.body != null ? type.body : PlaceholderSprite();
+            Vector2 size = type.FootprintSize();
+            visual.transform.localScale = new Vector3(size.x * CellGrid.CellSize * 1.08f / renderer.sprite.bounds.size.x,
+                size.y * CellGrid.CellSize * 1.08f / renderer.sprite.bounds.size.y, 1);
+            mainCellBody = visual.transform;
+            var circle = GetComponent<CircleCollider2D>();
+            if (circle != null) circle.radius = size.x * CellGrid.CellSize * 0.5f;
         }
-    }
-
-    /// <summary>只更新位置，不重建物体（每帧调用也很便宜）</summary>
-    void RepositionViews()
-    {
-        foreach (var c in Grid.All)
-        {
-            if (c.isMain && MainBodyHasSprite) continue;
-            if (!views.TryGetValue(c, out var go) || go == null) continue;
-
-            Vector2Int size = c.type.FootprintSize(c.rotation);
-            go.transform.position = Grid.GridToWorld(c.anchor)
-                                  + new Vector2((size.x - 1) * CellGrid.CellSize * 0.5f,
-                                                (size.y - 1) * CellGrid.CellSize * 0.5f);
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // 对外操作
-    // ------------------------------------------------------------------
-
-    /// <summary>放下主细胞（开局调用）</summary>
-    public void InitMain(CellType type, Vector2Int origin)
-    {
-        Grid.Place(type, origin, 0, asMain: true);
+        Grid.Clear();
+        Grid.Place(type, anchor, 0, true);
+        health.hp = type.hp;
+        health.maxHp = type.hp;
+        SyncTransform();
         RefreshAll();
     }
-
-    /// <summary>
-    /// 尝试分裂：先查能量，再查网格规则。
-    /// 返回 false 时 reason 可以直接显示在界面上（预览变红的判断也用它）。
-    /// </summary>
-    public bool TryPlace(CellType type, Vector2Int origin, int rotation, out string reason)
+    public bool TryPlace(CellType type, Vector2Int anchor, int rotation, out string reason)
     {
-        if (type == null) { reason = "未选择细胞"; return false; }
-
-        if (Grid.CanPlace(type, origin, rotation, out reason) == false)
-            return false;
-
-        if (energy < type.cost)
-        {
-            reason = "能量不足";
-            return false;
-        }
-
+        reason = "未选择细胞";
+        if (type == null || IsDead) return false;
+        if (!Grid.CanPlace(type, anchor, rotation, out reason)) return false;
+        if (energy < type.cost) { reason = "能量不足"; return false; }
         energy -= type.cost;
-        Grid.Place(type, origin, rotation);
+        Grid.Place(type, anchor, rotation);
         RefreshAll();
         return true;
     }
-
-    /// <summary>回收一个细胞，返还它的花费</summary>
+    public bool TryRotate(PlacedCell cell, out string reason)
+    {
+        if (!Grid.TryRotate(cell, out reason)) return false;
+        RefreshAll();
+        return true;
+    }
+    /// <summary>回收及断开的附属细胞全额返还；返还余额可暂时超过储能上限。</summary>
     public void Recycle(PlacedCell cell)
     {
-        if (cell == null) return;
-
-        // 主细胞不能回收
-        if (cell.isMain) return;
-
-        int refund = cell.type.cost;
-        var removedSquares = Grid.Remove(cell);
-
-        energy = Mathf.Min(energy + refund, energyLimit);
-
-        // 文档：若有细胞的位置因此不可用，则一同回收
-        RecycleInvalidCells();
-
+        if (cell == null || cell.isMain || !Contains(cell)) return;
+        energy += cell.type.cost;
+        Grid.Remove(cell);
+        foreach (var detached in Grid.DisconnectedCells())
+        {
+            energy += detached.type.cost;
+            Grid.Remove(detached);
+        }
         RefreshAll();
     }
-
-    /// <summary>
-    /// 回收"悬空"的细胞：如果不与任何 attach 细胞相邻就一起回收。
-    /// </summary>
-    private void RecycleInvalidCells()
+    public bool Contains(PlacedCell cell)
     {
-        bool changed = true;
-        while (changed)
-        {
-            changed = false;
-
-            List<PlacedCell> snapshot = new List<PlacedCell>(Grid.All);
-            foreach (var c in snapshot)
-            {
-                if (c.isMain) continue;
-
-                bool attached = false;
-                foreach (var s in c.squares)
-                {
-                    foreach (var n in CellGrid.Neighbours(s))
-                    {
-                        var other = Grid.CellAt(n);
-                        if (other != null && other != c && other.type.attach)
-                        {
-                            attached = true;
-                            break;
-                        }
-                    }
-                    if (attached) break;
-                }
-
-                if (!attached)
-                {
-                    energy = Mathf.Min(energy + c.type.cost, energyLimit);
-                    Grid.Remove(c);
-                    changed = true;
-                }
-            }
-        }
+        foreach (var c in Grid.All) if (c == cell) return true;
+        return false;
     }
+    /// <summary>被击毁的细胞和脱落部分不返还能量。</summary>
+    public void DamageCell(PlacedCell cell, int amount)
+    {
+        if (IsDead || !Contains(cell)) return;
+        cell.hp = Mathf.Max(0, cell.hp - amount);
+        if (cell.hp > 0) { Changed?.Invoke(); return; }
+        Grid.Remove(cell);
+        foreach (var detached in Grid.DisconnectedCells()) Grid.Remove(detached);
+        RefreshAll();
+    }
+    public void GainEnergy(int amount)
+    {
+        if (IsDead) return;
+        energy += Mathf.Min(Mathf.Max(0, amount), Mathf.Max(0, energyLimit - energy));
+        Changed?.Invoke();
+    }
+    public void NotifyDeath()
+    {
+        mainRb.velocity = Vector2.zero;
+        mainRb.angularVelocity = 0;
+        foreach (var collider in GetComponentsInChildren<Collider2D>()) collider.enabled = false;
+        if (threat != null) threat.enabled = false;
+        Died?.Invoke();
+    }
+    public bool ReceiveProtein(PlacedCell cell, ProteinKind kind) => proteins.Receive(cell, kind);
+    public void WaterImpulse(Vector2 direction) { mainRb.velocity += direction * GetComponent<move>().MaxSpeed; }
 
-    // ------------------------------------------------------------------
-    // 显示同步
-    // ------------------------------------------------------------------
-
-    /// <summary>数据和显示全部重建一次</summary>
+    // ================================================================
+    // 显示和属性
+    // ================================================================
     public void RefreshAll()
     {
         Grid.RecomputeLogic();
-
-        // 删掉已经不存在的细胞
-        var dead = new List<PlacedCell>();
-        foreach (var kv in views)
-            if (!Grid.All.Contains(kv.Key)) dead.Add(kv.Key);
-
-        foreach (var k in dead)
-        {
-            if (views[k] != null) Destroy(views[k]);
-            views.Remove(k);
-        }
-
-        // 创建/更新
+        energyLimit = 100f;
+        MovementMultiplier = 1f;
+        bool armed = false;
         foreach (var c in Grid.All)
         {
-            // 主细胞：只有当 Main Cell Body 自己有 SpriteRenderer（比如 player）时才跳过，
-            // 否则给它生成一个占位显示物体，方便在没贴图的测试场景里看到主细胞在哪
-            if (c.isMain && MainBodyHasSprite) continue;
-
-            if (!views.TryGetValue(c, out var go) || go == null)
+            if (c.type.function == CellType.Function.Storage) energyLimit += c.type.storageBonus;
+            if (c.type.function == CellType.Function.Power) MovementMultiplier += c.type.movementBonus;
+            armed |= c.type.function == CellType.Function.Spike || c.type.function == CellType.Function.DamageProtein;
+        }
+        if (threat != null) threat.enabled = armed;
+        var removed = new List<PlacedCell>();
+        foreach (var pair in views) if (!Contains(pair.Key)) removed.Add(pair.Key);
+        foreach (var c in removed) { views[c].SetActive(false); Destroy(views[c]); views.Remove(c); }
+        foreach (var c in Grid.All)
+        {
+            if (c.isMain)
             {
-                go = CreateView(c);
-                views[c] = go;
+                c.view = mainCellBody.gameObject;
+                var mainRenderer = mainCellBody.GetComponent<SpriteRenderer>();
+                if (mainRenderer != null) mainRenderer.sortingOrder = baseSortingOrder + Grid.SortingOrderOf(c);
+                continue;
+            }
+            if (!views.TryGetValue(c, out var go))
+            {
+                go = new GameObject("Cell_" + c.type.id);
+                go.transform.SetParent(cellRoot, false);
+                go.AddComponent<SpriteRenderer>();
+                if (c.type.divity)
+                {
+                    var arrow = new GameObject("Facing").AddComponent<SpriteRenderer>();
+                    arrow.transform.SetParent(go.transform, false);
+                    arrow.sprite = DirectionSprite();
+                    arrow.color = new Color(0.1f, 0.2f, 0.25f, 0.9f);
+                }
+                var body = go.AddComponent<CellBody>();
+                body.Initialize(this, c);
+                views.Add(c, go);
+                c.view = go;
             }
             UpdateView(c, go);
         }
-
         Changed?.Invoke();
     }
-
-    private GameObject CreateView(PlacedCell c)
-    {
-        var go = new GameObject($"Cell_{c.type.id}");
-        go.transform.SetParent(cellRoot, false);
-
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = c.type.body != null ? c.type.body : PlaceholderSprite();
-        sr.color = c.type.body != null ? c.type.tint : c.type.placeholderColor;
-
-        return go;
-    }
-
     private void UpdateView(PlacedCell c, GameObject go)
     {
-        Vector2Int size = c.type.FootprintSize(c.rotation);
-
-        // 位置：外接矩形的中心
-        Vector2 center = Grid.GridToWorld(c.anchor)
-                       + new Vector2((size.x - 1) * CellGrid.CellSize * 0.5f,
-                                     (size.y - 1) * CellGrid.CellSize * 0.5f);
-        go.transform.position = center;
-
-        // 缩放：让贴图铺满整个 footprint（占位方块是 1x1 单位）
-        go.transform.localScale = new Vector3(size.x * CellGrid.CellSize,
-                                              size.y * CellGrid.CellSize, 1f);
-
         var sr = go.GetComponent<SpriteRenderer>();
-        if (sr != null)
+        sr.sprite = c.type.body != null ? c.type.body : PlaceholderSprite();
+        sr.color = c.type.body != null ? c.type.tint : c.type.placeholderColor;
+        sr.sortingOrder = baseSortingOrder + Grid.SortingOrderOf(c);
+        go.transform.position = Grid.CellCenter(c);
+        go.transform.rotation = Quaternion.Euler(0, 0, Grid.angle - c.rotation);
+        // 按贴图原始尺寸归一化，保持相邻细胞略微重叠。
+        Vector2 size = c.type.FootprintSize();
+        Vector3 parentScale = cellRoot.lossyScale;
+        go.transform.localScale = new Vector3(size.x * CellGrid.CellSize * 1.08f / sr.sprite.bounds.size.x / parentScale.x,
+            size.y * CellGrid.CellSize * 1.08f / sr.sprite.bounds.size.y / parentScale.y, 1);
+        go.GetComponent<BoxCollider2D>().size = (Vector2)sr.sprite.bounds.size / 1.08f;
+        if (c.type.divity)
         {
-            sr.sortingOrder = baseSortingOrder + Grid.SortingOrderOf(c);
-            // 沟通没连上时暗一点，方便肉眼看出 link 传播结果
-            Color tint = c.type.body != null ? c.type.tint : c.type.placeholderColor;
-            if (!c.link) tint *= new Color(0.6f, 0.6f, 0.6f, 1f);
-            sr.color = tint;
+            var arrow = go.transform.GetChild(0);
+            arrow.localPosition = new Vector3(0, sr.sprite.bounds.size.y * 0.3f, 0);
+            arrow.localScale = new Vector3(1.4f / go.transform.lossyScale.x, 1.4f / go.transform.lossyScale.y, 1);
+            arrow.GetComponent<SpriteRenderer>().sortingOrder = sr.sortingOrder + 1;
         }
     }
-
-    /// <summary>运行期生成一个 1x1 白色方块贴图（美术资源到位后就不用了）</summary>
+    /// <summary>用三角标记显示有方向性细胞的朝向。</summary>
+    public static Sprite DirectionSprite()
+    {
+        if (arrowSprite != null) return arrowSprite;
+        var texture = new Texture2D(16, 16);
+        for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++)
+            texture.SetPixel(x, y, Mathf.Abs(x - 7.5f) <= (15 - y) * 0.5f ? Color.white : Color.clear);
+        texture.Apply();
+        arrowSprite = Sprite.Create(texture, new Rect(0, 0, 16, 16), Vector2.one * 0.5f, 16);
+        return arrowSprite;
+    }
     public static Sprite PlaceholderSprite()
     {
         if (whiteSprite != null) return whiteSprite;
-
-        var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
-        var px = new Color32[16 * 16];
-        for (int i = 0; i < px.Length; i++) px[i] = new Color32(255, 255, 255, 255);
-        tex.SetPixels32(px);
-        tex.filterMode = FilterMode.Bilinear;
-        tex.Apply();
-
-        whiteSprite = Sprite.Create(tex, new Rect(0, 0, 16, 16), new Vector2(0.5f, 0.5f), 16f);
-        whiteSprite.name = "PlaceholderSquare";
+        var texture = new Texture2D(1, 1);
+        texture.SetPixel(0, 0, Color.white);
+        texture.Apply();
+        whiteSprite = Sprite.Create(texture, new Rect(0, 0, 1, 1), Vector2.one * 0.5f, 1);
         return whiteSprite;
     }
 }

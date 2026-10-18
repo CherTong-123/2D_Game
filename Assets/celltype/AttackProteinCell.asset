@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
+  m_Name: AttackProteinCell
+  m_EditorClassIdentifier:
+  id: "atknutcell"
+  displayName: "\u4f24\u5bb3\u86cb\u767d\u7ec6\u80de"
+  description: "\u6301\u7eed\u5408\u6210\u4f24\u5bb3\u86cb\u767d\uff0c\u6700\u591a\u50a8\u5b58 3 \u679a\u3002E \u91ca\u653e\uff1b\u671d\u5411\u7ec6\u80de\u65f6\u81ea\u52a8\u4f20\u9012\uff1b\u6536\u5230\u5916\u90e8\u86cb\u767d\u540e\u6682\u505c\u5408\u6210\u3002"
+  hp: 100
+  cellsize: 1
+  pmt: 1
+  attach: 1
+  cost: 100
+  divity: 1
+  link: 0
+  eat: 0
+  function: 4
+  storageBonus: 100
+  movementBonus: 0.15
+  contactDamage: 100
+  productionInterval: 3
+  receivingPause: 1
+  proteinDamage: 15
+  slowMultiplier: 0.5
+  slowDuration: 2
+  spraySpeed: 20
+  icon: {fileID: -583445537, guid: 72b52177ef1f9874eb2e2f7e079810af, type: 3}
+  body: {fileID: -583445537, guid: 72b52177ef1f9874eb2e2f7e079810af, type: 3}
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  placeholderColor: {r: 1, g: 0.5, b: 0.5, a: 1}

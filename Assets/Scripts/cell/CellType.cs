@@ -11,6 +11,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "CellType", menuName = "细胞战舰/细胞类型", order = 0)]
 public class CellType : ScriptableObject
 {
+    /// <summary>细胞的功能；数值与贴图仍由资产配置。</summary>
+    public enum Function { Main, Spike, Storage, Power, DamageProtein, SlowProtein, Spray, Armor, Transport }
+
     [Header("标识")]
     public string id = "cell";
     public string displayName = "细胞";
@@ -33,6 +36,27 @@ public class CellType : ScriptableObject
     public bool link = false;
     [Tooltip("进食：主细胞默认为 1")]
     public bool eat = false;
+
+    [Header("细胞功能")]
+    public Function function;
+    [Tooltip("储能细胞增加的能量上限")]
+    public float storageBonus = 100f;
+    [Tooltip("动力细胞增加的移动速度和加速度比例")]
+    public float movementBonus = 0.15f;
+    [Tooltip("尖刺接触伤害")]
+    public int contactDamage = 100;
+    [Tooltip("蛋白合成间隔，秒；系统细则补充前使用此默认值")]
+    public float productionInterval = 3f;
+    [Tooltip("收到外部蛋白后暂停合成的时间，秒")]
+    public float receivingPause = 1f;
+    [Tooltip("伤害蛋白的伤害；系统细则补充前使用此默认值")]
+    public int proteinDamage = 15;
+    [Tooltip("减速后保留的速度比例")]
+    public float slowMultiplier = 0.5f;
+    [Tooltip("减速持续时间，秒")]
+    public float slowDuration = 2f;
+    [Tooltip("喷射细胞发射蛋白的速度，世界单位/秒")]
+    public float spraySpeed = 20f;
 
     [Header("表现 —— 美术后期直接替换这几张图")]
     [Tooltip("右侧列表里的图标")]
@@ -63,7 +87,7 @@ public class CellType : ScriptableObject
     public Vector2Int FootprintSize(int rotation)
     {
         Vector2Int s = FootprintSize();
-        bool swap = divity && (rotation % 180 != 0);
+        bool swap = rotation % 180 != 0;
         return swap ? new Vector2Int(s.y, s.x) : s;
     }
 }

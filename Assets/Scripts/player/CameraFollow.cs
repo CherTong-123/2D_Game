@@ -43,15 +43,15 @@ public class CameraFollow : MonoBehaviour
 
         // 算出「装下整张地图」需要的 orthographicSize
         float halfH = (mapMaxY - mapMinY) * 0.5f;   // 高度方向
-        float halfW = (mapMaxX - mapMinX) * 0.3f;   // 宽度方向
-        introStartSize = halfW / cam.aspect;  // 取能同时装下的那个
+        float halfW = (mapMaxX - mapMinX) * 0.5f;   // 宽度方向
+        introStartSize = Mathf.Max(halfH, halfW / cam.aspect);  // 取能同时装下的那个
 
         introEndSize = playZoom;
 
         cam.orthographicSize = introStartSize;
         transform.position = new Vector3(
             (mapMinX + mapMaxX) * 0.5f,
-            (mapMinY + mapMaxY) * 0.3f,
+            (mapMinY + mapMaxY) * 0.5f,
             transform.position.z);
 
         introTimer = 0f;

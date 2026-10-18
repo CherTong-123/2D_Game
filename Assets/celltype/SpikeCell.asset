@@ -12,18 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
   m_Name: SpikeCell
   m_EditorClassIdentifier: 
-  id: spike
-  displayName: "\u5C16\u523A\u7EC6\u80DE"
-  description: 
-  hp: 100
-  cellsize: 1
-  pmt: 0
-  attach: 1
-  cost: 30
+  id: "spikecell"
+  displayName: "\u5c16\u523a\u7ec6\u80de"
+  description: "\u63a5\u89e6\u654c\u4eba\u9020\u6210 100 \u70b9\u4f24\u5bb3\uff1b\u524d\u65b9\u5fc5\u987b\u7559\u7a7a\u3002"
+  hp: 150
+  cellsize: 2
+  pmt: 1
+  attach: 0
+  cost: 100
   divity: 1
   link: 0
   eat: 0
+  function: 1
+  storageBonus: 100
+  movementBonus: 0.15
+  contactDamage: 100
+  productionInterval: 3
+  receivingPause: 1
+  proteinDamage: 15
+  slowMultiplier: 0.5
+  slowDuration: 2
+  spraySpeed: 20
   icon: {fileID: 0}
   body: {fileID: 0}
   tint: {r: 1, g: 1, b: 1, a: 1}
-  placeholderColor: {r: 1, g: 0.37195534, b: 0.34901965, a: 0.9}
+  placeholderColor: {r: 1, g: 0.4, b: 0.35, a: 1}

@@ -1,303 +1,214 @@
+// ============================================================================
+// CellGrid.cs：细胞占格、尖刺朝向、连接和回收规则。
+// ============================================================================
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>一个已经放在网格上的细胞实例（运行时数据）。</summary>
+/// <summary>已放置的细胞及运行状态；旋转角按顺时针记录。</summary>
 public class PlacedCell
 {
     public CellType type;
-    public int hp;
-    public int rotation;                 // 0 / 90 / 180 / 270
-    public Vector2Int anchor;            // 左下角格坐标
-    public List<Vector2Int> squares = new List<Vector2Int>();
-
-    public bool isMain;                  // 是否主细胞
-    public bool link;                    // 运行时计算出的沟通值
-    public bool eat;                     // 运行时计算出的进食值
-
-    public GameObject view;              // 对应的显示物体
+    public int hp, rotation;
+    public Vector2Int anchor;
+    public List<Vector2Int> squares;
+    public bool isMain, link, eat;
+    public GameObject view;
+    public readonly List<ProteinKind> proteins = new List<ProteinKind>();
+    public float productionTimer, transferTimer;
 }
 
-/// <summary>
-/// 细胞网格：纯数据 + 规则，不依赖 MonoBehaviour，方便单测和复用。
-///
-/// 坐标约定：
-///   - 格子边长 = 5（策划文档「细胞正方形网格边长 5」）
-///   - 格坐标 (gx, gy) 表示第 gx 列第 gy 行，世界坐标取该格**中心**
-/// </summary>
+/// <summary>以主细胞为中心的网格，随细胞团平移、转向。</summary>
 public class CellGrid
 {
     public const float CellSize = 5f;
-
-    /// <summary>
-    /// 网格原点（世界坐标）。
-    ///
-    /// 主细胞用玩家物体时，每帧把它设为「玩家位置 − 主细胞中心偏移」，
-    /// 整个细胞团就会跟着玩家一起移动。
-    /// </summary>
     public Vector2 origin;
-
-    /// <summary>格子在「网格本地坐标系」里的中心（不含 origin）</summary>
-    public static Vector2 SquareLocal(Vector2Int g)
-    {
-        return new Vector2(g.x * CellSize + CellSize * 0.5f,
-                           g.y * CellSize + CellSize * 0.5f);
-    }
-
-    /// <summary>格坐标 → 该格子中心的世界坐标</summary>
-    public Vector2 GridToWorld(Vector2Int g) => origin + SquareLocal(g);
-
-    /// <summary>世界坐标 → 所在格坐标</summary>
-    public Vector2Int WorldToGrid(Vector2 w)
-    {
-        Vector2 local = w - origin;
-        return new Vector2Int(Mathf.FloorToInt(local.x / CellSize),
-                              Mathf.FloorToInt(local.y / CellSize));
-    }
-
-    // ------------------------------------------------------------------
-
+    public float angle;
     private readonly Dictionary<Vector2Int, PlacedCell> map = new Dictionary<Vector2Int, PlacedCell>();
     private readonly List<PlacedCell> all = new List<PlacedCell>();
-
     public IReadOnlyList<PlacedCell> All => all;
     public int CellCount => all.Count;
-
-    /// <summary>所有被占用的格子总数（= cellnum_b）</summary>
     public int SquareCount => map.Count;
-
     public PlacedCell Main { get; private set; }
-
-    /// <summary>查询某个格子被哪个细胞占了</summary>
-    public PlacedCell CellAt(Vector2Int g)
+    public static Vector2 SquareLocal(Vector2Int g) => new Vector2(g.x + 0.5f, g.y + 0.5f) * CellSize;
+    public static Vector2 Rotate(Vector2 p, float degrees) => Quaternion.Euler(0, 0, degrees) * p;
+    public Vector2 GridToWorld(Vector2Int g) => origin + Rotate(SquareLocal(g), angle);
+    public Vector2 CellCenter(PlacedCell c) => Center(c.type, c.anchor, c.rotation);
+    public Vector2 Center(CellType type, Vector2Int anchor, int rotation)
+        => origin + Rotate(((Vector2)anchor + (Vector2)type.FootprintSize(rotation) * 0.5f) * CellSize, angle);
+    public Vector2Int WorldToGrid(Vector2 w)
     {
-        return map.TryGetValue(g, out var c) ? c : null;
+        Vector2 p = Rotate(w - origin, -angle) / CellSize;
+        return new Vector2Int(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y));
+    }
+    public PlacedCell CellAt(Vector2Int g) => map.TryGetValue(g, out var c) ? c : null;
+    public bool IsFree(Vector2Int g) => !map.ContainsKey(g);
+    public static Vector2Int Facing(int rotation)
+    {
+        switch ((rotation % 360 + 360) % 360)
+        {
+            case 90: return Vector2Int.right;
+            case 180: return Vector2Int.down;
+            case 270: return Vector2Int.left;
+            default: return Vector2Int.up;
+        }
     }
 
-    public bool IsFree(Vector2Int g) => !map.ContainsKey(g);
-
-    // ------------------------------------------------------------------
-    // 放置 / 移除
-    // ------------------------------------------------------------------
-
-    /// <summary>
-    /// 尝试在 origin 处放置一个细胞。
-    /// 返回 false 时 failReason 里是人话说明（可以直接显示在 UI 上）。
-    /// </summary>
-    public bool CanPlace(CellType type, Vector2Int origin, int rotation, out string failReason)
+    // ================================================================
+    // 放置和旋转
+    // ================================================================
+    public bool CanPlace(CellType type, Vector2Int anchor, int rotation, out string reason)
+        => CanPlace(type, anchor, rotation, null, out reason);
+    private bool CanPlace(CellType type, Vector2Int anchor, int rotation, PlacedCell ignore, out string reason)
     {
-        failReason = null;
-
-        Vector2Int size = type.FootprintSize(rotation);
-        var squares = SquaresOf(origin, size);
-
-        // 1) 不能和已有细胞重叠
+        reason = "";
+        var squares = SquaresOf(anchor, type.FootprintSize(rotation));
         foreach (var s in squares)
+            if (CellAt(s) != null && CellAt(s) != ignore) { reason = "位置已被占用"; return false; }
+        foreach (var other in all)
         {
-            if (map.ContainsKey(s))
-            {
-                failReason = "位置已被占用";
-                return false;
-            }
+            if (other == ignore || other.type.function != CellType.Function.Spike) continue;
+            foreach (var front in FrontSquares(other.type, other.anchor, other.rotation))
+                if (squares.Contains(front)) { reason = "不能占用尖刺前方"; return false; }
         }
-
-        // 2) 第一个细胞（主细胞）可以随便放；之后必须与 attach=1 的细胞相邻
-        if (all.Count > 0)
+        if (type.function == CellType.Function.Spike)
+            foreach (var front in FrontSquares(type, anchor, rotation))
+                if (CellAt(front) != null && CellAt(front) != ignore)
+                { reason = "尖刺不能朝向细胞"; return false; }
+        if (all.Count == 0) return true;
+        foreach (var s in squares)
+            foreach (var n in Neighbours(s))
+            {
+                var other = CellAt(n);
+                if (other != null && other != ignore && other.type.attach) return true;
+            }
+        reason = "必须与可附着细胞相邻";
+        return false;
+    }
+    public PlacedCell Place(CellType type, Vector2Int anchor, int rotation, bool asMain = false)
+    {
+        var c = new PlacedCell { type = type, hp = type.hp, anchor = anchor, rotation = rotation,
+            squares = SquaresOf(anchor, type.FootprintSize(rotation)), isMain = asMain,
+            productionTimer = type.productionInterval };
+        all.Add(c);
+        foreach (var s in c.squares) map.Add(s, c);
+        if (asMain) Main = c;
+        RecomputeLogic();
+        return c;
+    }
+    /// <summary>保留细胞实例和蛋白，阻止会造成重叠或断开的旋转。</summary>
+    public bool TryRotate(PlacedCell c, out string reason)
+    {
+        reason = "主细胞不能旋转";
+        if (c == null || c.isMain || !all.Contains(c)) return false;
+        int next = (c.rotation + 90) % 360;
+        if (!CanPlace(c.type, c.anchor, next, c, out reason)) return false;
+        int previous = c.rotation;
+        var previousSquares = c.squares;
+        foreach (var s in c.squares) map.Remove(s);
+        c.rotation = next;
+        c.squares = SquaresOf(c.anchor, c.type.FootprintSize(next));
+        foreach (var s in c.squares) map.Add(s, c);
+        if (DisconnectedCells().Count > 0)
         {
-            bool adjacentToAttach = false;
-
-            foreach (var s in squares)
-            {
-                foreach (var n in Neighbours(s))
-                {
-                    var other = CellAt(n);
-                    if (other != null && other.type.attach)
-                    {
-                        adjacentToAttach = true;
-                        break;
-                    }
-                }
-                if (adjacentToAttach) break;
-            }
-
-            if (!adjacentToAttach)
-            {
-                failReason = "必须与可附着细胞相邻";
-                return false;
-            }
+            foreach (var s in c.squares) map.Remove(s);
+            c.rotation = previous;
+            c.squares = previousSquares;
+            foreach (var s in c.squares) map.Add(s, c);
+            reason = "旋转后有细胞失去连接";
+            return false;
         }
-
+        RecomputeLogic();
         return true;
     }
-
-    /// <summary>放置细胞（调用前先 CanPlace 校验）。asMain 只由 InitMain 传 true</summary>
-    public PlacedCell Place(CellType type, Vector2Int origin, int rotation, bool asMain = false)
+    public List<Vector2Int> Remove(PlacedCell c)
     {
-        Vector2Int size = type.FootprintSize(rotation);
-
-        var cell = new PlacedCell
-        {
-            type = type,
-            hp = type.hp,
-            rotation = rotation,
-            anchor = origin,
-            squares = SquaresOf(origin, size),
-            isMain = asMain,          // 主细胞必须显式指定，不会"第一个放下就自动当主细胞"
-        };
-
-        foreach (var s in cell.squares) map[s] = cell;
-        all.Add(cell);
-
-        if (cell.isMain) Main = cell;
-
+        if (c == null || c.isMain || !all.Remove(c)) return new List<Vector2Int>();
+        foreach (var s in c.squares) map.Remove(s);
         RecomputeLogic();
-        return cell;
+        return c.squares;
     }
+    public void Clear() { map.Clear(); all.Clear(); Main = null; }
 
-    /// <summary>移除一个细胞，返回它占用的格子（供回收逻辑用）</summary>
-    public List<Vector2Int> Remove(PlacedCell cell)
+    /// <summary>从主细胞沿可附着细胞向外查找，孤立的细胞环也会被回收。</summary>
+    public List<PlacedCell> DisconnectedCells()
     {
-        if (cell == null) return null;
-
-        foreach (var s in cell.squares) map.Remove(s);
-        all.Remove(cell);
-
-        if (cell.isMain) Main = all.Count > 0 ? all[0] : null;
-
-        RecomputeLogic();
-        return cell.squares;
-    }
-
-    /// <summary>清空</summary>
-    public void Clear()
-    {
-        map.Clear();
-        all.Clear();
-        Main = null;
-    }
-
-    // ------------------------------------------------------------------
-    // 规则计算
-    // ------------------------------------------------------------------
-
-    /// <summary>
-    /// 重算「沟通(link)」和「进食(eat)」的传播。
-    ///
-    /// 文档规则：
-    ///   - 主细胞 link=1、eat=1，其余默认 0
-    ///   - link=1 的细胞，会让周围 link=0 且 pmt=2 的细胞 link=1（反复传播）
-    ///   - link=1 且周围有空位的细胞，eat=1
-    /// </summary>
-    public void RecomputeLogic()
-    {
-        foreach (var c in all)
-        {
-            c.link = c.isMain;
-            c.eat = c.isMain;
-        }
-
-        // ---- link 传播（BFS）----
+        var reached = new HashSet<PlacedCell>();
         var queue = new Queue<PlacedCell>();
-        foreach (var c in all) if (c.link) queue.Enqueue(c);
-
+        if (Main != null) { reached.Add(Main); queue.Enqueue(Main); }
         while (queue.Count > 0)
         {
-            var cur = queue.Dequeue();
-
-            foreach (var s in cur.squares)
-            {
-                foreach (var n in Neighbours(s))
-                {
-                    var other = CellAt(n);
-                    if (other == null || other.link) continue;
-                    if (other.type.pmt != 2) continue;      // 只有通透性强(2)的才会被点亮
-
-                    other.link = true;
-                    queue.Enqueue(other);
-                }
-            }
+            var c = queue.Dequeue();
+            if (!c.type.attach) continue;
+            foreach (var other in Adjacent(c)) if (reached.Add(other)) queue.Enqueue(other);
         }
-
-        // ---- eat：link=1 且周围有空位 ----
+        var result = new List<PlacedCell>();
+        foreach (var c in all) if (!reached.Contains(c)) result.Add(c);
+        return result;
+    }
+    public IEnumerable<PlacedCell> Adjacent(PlacedCell c)
+    {
+        var seen = new HashSet<PlacedCell>();
+        foreach (var s in c.squares)
+            foreach (var n in Neighbours(s))
+            {
+                var other = CellAt(n);
+                if (other != null && other != c && seen.Add(other)) yield return other;
+            }
+    }
+    public PlacedCell FrontCell(PlacedCell c)
+    {
+        foreach (var s in FrontSquares(c.type, c.anchor, c.rotation))
+            if (CellAt(s) != null) return CellAt(s);
+        return null;
+    }
+    public void RecomputeLogic()
+    {
+        foreach (var c in all) { c.link = c.isMain; c.eat = c.isMain; }
+        var queue = new Queue<PlacedCell>();
+        if (Main != null) queue.Enqueue(Main);
+        while (queue.Count > 0)
+            foreach (var other in Adjacent(queue.Dequeue()))
+                if (!other.link && other.type.pmt == 2) { other.link = true; queue.Enqueue(other); }
         foreach (var c in all)
         {
-            if (c.isMain) { c.eat = true; continue; }
-            if (!c.link) { c.eat = false; continue; }
-
-            bool hasEmpty = false;
+            if (!c.link || c.isMain) continue;
             foreach (var s in c.squares)
-            {
-                foreach (var n in Neighbours(s))
-                {
-                    if (IsFree(n)) { hasEmpty = true; break; }
-                }
-                if (hasEmpty) break;
-            }
-            c.eat = hasEmpty;
+                foreach (var n in Neighbours(s)) if (IsFree(n)) c.eat = true;
         }
     }
-
-    /// <summary>
-    /// 贴图显示优先级。
-    /// 文档：以主细胞中央格为 0，其余格子 = 曼哈顿距离；细胞优先级 = 所占格子的平均值；
-    /// 优先级低的贴图在上。Unity 里 sortingOrder 越大越靠前，所以用负相关。
-    /// </summary>
-    public int SortingOrderOf(PlacedCell cell)
+    public int SortingOrderOf(PlacedCell c)
     {
-        if (cell == null) return 0;
-
-        Vector2Int center = MainCenterSquare();
-        float sum = 0f;
-        foreach (var s in cell.squares)
-            sum += Mathf.Abs(s.x - center.x) + Mathf.Abs(s.y - center.y);
-
-        float priority = sum / Mathf.Max(1, cell.squares.Count);
-        return 1000 - Mathf.RoundToInt(priority * 10f);
+        var center = MainCenterSquare();
+        float sum = 0;
+        foreach (var s in c.squares) sum += Mathf.Abs(s.x - center.x) + Mathf.Abs(s.y - center.y);
+        return 1000 - Mathf.RoundToInt(sum / c.squares.Count * 10f);
     }
-
-    /// <summary>主细胞的中央格（用于优先级计算）</summary>
-    public Vector2Int MainCenterSquare()
-    {
-        if (Main == null) return Vector2Int.zero;
-        Vector2Int size = Main.type.FootprintSize(Main.rotation);
-        return new Vector2Int(Main.anchor.x + size.x / 2,
-                              Main.anchor.y + size.y / 2);
-    }
-
-    /// <summary>整个细胞团的外接矩形（用于相机/描边环）</summary>
+    public Vector2Int MainCenterSquare() => Main == null ? Vector2Int.zero : Main.anchor + Main.type.FootprintSize(Main.rotation) / 2;
     public RectInt Bounds()
     {
-        if (all.Count == 0) return new RectInt(0, 0, 0, 0);
-
-        int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
-        foreach (var s in map.Keys)
-        {
-            if (s.x < minX) minX = s.x;
-            if (s.y < minY) minY = s.y;
-            if (s.x > maxX) maxX = s.x;
-            if (s.y > maxY) maxY = s.y;
-        }
-        return new RectInt(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        if (map.Count == 0) return new RectInt();
+        var min = new Vector2Int(int.MaxValue, int.MaxValue);
+        var max = new Vector2Int(int.MinValue, int.MinValue);
+        foreach (var s in map.Keys) { min = Vector2Int.Min(min, s); max = Vector2Int.Max(max, s); }
+        return new RectInt(min, max - min + Vector2Int.one);
     }
-
-    // ------------------------------------------------------------------
-    // 工具
-    // ------------------------------------------------------------------
-
-    public static List<Vector2Int> SquaresOf(Vector2Int origin, Vector2Int size)
+    public static List<Vector2Int> SquaresOf(Vector2Int anchor, Vector2Int size)
     {
-        var list = new List<Vector2Int>(size.x * size.y);
-        for (int x = 0; x < size.x; x++)
-            for (int y = 0; y < size.y; y++)
-                list.Add(new Vector2Int(origin.x + x, origin.y + y));
-        return list;
+        var result = new List<Vector2Int>();
+        for (int x = 0; x < size.x; x++) for (int y = 0; y < size.y; y++) result.Add(anchor + new Vector2Int(x, y));
+        return result;
     }
-
-    /// <summary>四邻格（文档说的「网格相邻」按边相邻算）</summary>
+    public static IEnumerable<Vector2Int> FrontSquares(CellType type, Vector2Int anchor, int rotation)
+    {
+        var size = type.FootprintSize(rotation);
+        var facing = Facing(rotation);
+        for (int i = 0; i < (facing.x == 0 ? size.x : size.y); i++)
+            yield return anchor + (facing.x == 0 ? new Vector2Int(i, facing.y > 0 ? size.y : -1)
+                : new Vector2Int(facing.x > 0 ? size.x : -1, i));
+    }
     public static IEnumerable<Vector2Int> Neighbours(Vector2Int g)
     {
-        yield return new Vector2Int(g.x + 1, g.y);
-        yield return new Vector2Int(g.x - 1, g.y);
-        yield return new Vector2Int(g.x, g.y + 1);
-        yield return new Vector2Int(g.x, g.y - 1);
+        yield return g + Vector2Int.right; yield return g + Vector2Int.left;
+        yield return g + Vector2Int.up; yield return g + Vector2Int.down;
     }
 }

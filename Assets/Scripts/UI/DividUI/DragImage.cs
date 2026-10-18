@@ -54,6 +54,16 @@ public class DragImage : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         SuppressUndo = false;
     }
 
+    void OnDisable()
+    {
+        if (!dragging) return;
+        dragging = false;
+        IsDragging = false;
+        currentEventData = null;
+        DestroyGhost();
+        SetCellVisual(false);
+    }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
         dragging = true;
@@ -148,7 +158,9 @@ public class DragImage : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         if (entityPhotoSprite == null || canvas == null) return;
 
         GameObject ghostGo = new GameObject("EntityPhotoGhost", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        ghostGo.transform.SetParent(canvas.transform, false);
+        // 放在网格内，关闭分裂界面时跟随隐藏。
+        ghostGo.transform.SetParent(DropArea.Instance != null ? DropArea.Instance.transform : canvas.transform, false);
+        ghostGo.AddComponent<LayoutElement>().ignoreLayout = true;
 
         Image ghostImage = ghostGo.GetComponent<Image>();
         ghostImage.sprite = entityPhotoSprite;

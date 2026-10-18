@@ -70,6 +70,14 @@ public class EnemyAI : MonoBehaviour, INutrientEater
     private int dashCount;         // 混合型本轮已冲刺次数
     private bool dashing;
     private float dashTimer;
+    private float effectSlowTimer;
+    private float effectSlowMultiplier = 1f;
+    /// <summary>减速蛋白命中后，在指定秒数内降低移动速度。</summary>
+    public void ApplySlow(float multiplier, float duration)
+    {
+        effectSlowMultiplier = Mathf.Min(effectSlowMultiplier, multiplier);
+        effectSlowTimer = Mathf.Max(effectSlowTimer, duration);
+    }
     private Vector2 dashDir;
     // ================= 生命周期 =================
     void Awake()
@@ -83,11 +91,12 @@ public class EnemyAI : MonoBehaviour, INutrientEater
         // 调试便利：运行时在 Inspector 改 Type 也能立刻重建行为树
         if (type != lastBuiltType) Rebuild();
         float dt = Time.deltaTime;
+        if (dt == 0f) return;
         bb.Sense();
         TickTimers(dt);
         tree.Tick();
         // 冲刺期间速度由这里统一接管，覆盖动作里设的值
-        if (dashing) bb.rb.velocity = dashDir * dashSpeed;
+        if (dashing) bb.rb.velocity = dashDir * dashSpeed * effectSlowMultiplier;
         if (debugState && Time.frameCount % 30 == 0) PrintState();
     }
     void FixedUpdate()
@@ -193,6 +202,7 @@ public class EnemyAI : MonoBehaviour, INutrientEater
     {
         Vector2 away = (Vector2)transform.position - (Vector2)bb.danger.position;
         if (away.sqrMagnitude < 0.001f) away = Random.insideUnitCircle;
+        dashing = false;
         Drive(away, fleeSpeed);
         return NodeState.Running;
     }
@@ -322,7 +332,7 @@ public class EnemyAI : MonoBehaviour, INutrientEater
         }
         // 靠近边界时把朝外的分量压掉，让 AI 沿墙滑行
         Vector2 moveDir = (speed > 0.01f) ? SteerInsideBounds(dir) : dir;
-        bb.rb.velocity = moveDir.normalized * speed * speedMul;
+        bb.rb.velocity = moveDir.normalized * speed * speedMul * effectSlowMultiplier;
         FaceDirection(dir, turnMul);   // 朝向仍按原目标，不受边界影响
     }
     /// <summary>靠近地图边界时压掉朝外的方向分量，避免 AI 顶在墙上来回抖。</summary>
@@ -347,6 +357,8 @@ public class EnemyAI : MonoBehaviour, INutrientEater
     }
     void TickTimers(float dt)
     {
+        if (effectSlowTimer > 0f) effectSlowTimer -= dt;
+        if (effectSlowTimer <= 0f) effectSlowMultiplier = 1f;
         if (cooldown > 0f) cooldown -= dt;
         if (slowTimer > 0f) slowTimer -= dt;
         if (retreatTimer > 0f) retreatTimer -= dt;
@@ -380,19 +392,13 @@ public class EnemyAI : MonoBehaviour, INutrientEater
     ///   - 有物理阻挡，不会穿模
     ///   - 接触期间每帧触发，配合 damageTimer 做伤害节流
     /// </summary>
-    void OnCollisionStay2D(Collision2D collision)
+    void OnCollisionStay2D(Collision2D collision) { HitPlayer(collision.collider); }
+    void OnTriggerStay2D(Collider2D other) { HitPlayer(other); }
+    void HitPlayer(Collider2D other)
     {
-        if (!dashing) return;
-        if (!collision.collider.CompareTag("Player")) return;
-        if (damageTimer > 0f) return;              // 伤害节流
-        damageTimer = meleeDamageInterval;
-        // 主伤害：扣 HP
-        maincell cell = collision.collider.GetComponent<maincell>();
-        if (cell != null) cell.TakeDamage(meleeDamage);
-        // 附带：也扣一点能量（不需要就删掉这两行）
-        Debug.Log($"[Enemy/{type}] 冲撞玩家 -{meleeDamage}");
+        if (!dashing || damageTimer > 0f) return;
+        if (CellBody.HitPlayer(other, meleeDamage)) damageTimer = meleeDamageInterval;
     }
-    // ================= 调试 =================
     void PrintState()
     {
         float d = bb.targetPlayer

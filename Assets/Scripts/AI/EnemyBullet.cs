@@ -14,6 +14,7 @@ public class EnemyBullet : MonoBehaviour
     public int damage = 15;
     private Vector2 dir = Vector2.right;
     private bool launched;
+    private bool consumed;
     /// <summary>由 EnemyAI 调用，指定飞行方向并开始计时销毁。</summary>
     public void Launch(Vector2 direction)
     {
@@ -31,12 +32,8 @@ public class EnemyBullet : MonoBehaviour
     }
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (!other.CompareTag("Player")) return;
-        // 主伤害：扣 HP（和近战冲撞走同一套逻辑）
-        maincell cell = other.GetComponent<maincell>();
-        if (cell != null) cell.TakeDamage(damage);
-        // 附带：也扣一点能量（不需要就删掉这两行）
-        Debug.Log($"[Bullet] 命中玩家 -{damage}");
+        if (consumed || !CellBody.HitPlayer(other, damage)) return;
+        consumed = true;
         Destroy(gameObject);
     }
 }

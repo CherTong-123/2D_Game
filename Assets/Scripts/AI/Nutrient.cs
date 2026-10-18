@@ -16,8 +16,12 @@ public class Nutrient : MonoBehaviour
     public static readonly List<Nutrient> All = new List<Nutrient>();
     public NutrientType type;
     public int energy;
+    private bool consumed;
+    private NutrientSpawner owner;
     void OnEnable()
     {
+        consumed = false;
+        owner = GetComponentInParent<NutrientSpawner>();
         All.Add(this);
     }
     void OnDisable()
@@ -27,17 +31,21 @@ public class Nutrient : MonoBehaviour
     /// <summary>
     /// 被吃掉时触发。要求：
     /// 1) 营养球 Collider2D 勾选 Is Trigger（由 NutrientSpawner 运行时设置）
-    /// 2) 吃的一方身上挂了实现 INutrientEater 的脚本（玩家 em / 敌人 EnemyAI）
+    /// 2) 吃的一方身上挂了实现 INutrientEater 的脚本。
     /// </summary>
     void OnTriggerEnter2D(Collider2D other)
     {
         // 谁吃都行 —— 只要它实现了 INutrientEater
+        if (consumed) return;
+        var body = other.GetComponent<CellBody>();
+        if (body != null && !body.CanEat) return;
         INutrientEater eater = other.GetComponent<INutrientEater>();
         if (eater == null) return;
+        consumed = true;
+        All.Remove(this);
         eater.GainEnergy(energy);
         // 从生成器里回收并销毁；没有生成器就直接销毁
-        NutrientSpawner spawner = FindObjectOfType<NutrientSpawner>();
-        if (spawner != null) spawner.Despawn(gameObject);
+        if (owner != null) owner.Despawn(gameObject);
         else Destroy(gameObject);
     }
 }
