@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6603255230835172500}
   - component: {fileID: 3180369327467734976}
   - component: {fileID: 5975443810768128945}
-  - component: {fileID: 3401671967290652064}
+  - component: {fileID: -1188484966289369784}
   m_Layer: 0
   m_Name: player
   m_TagString: Untagged
@@ -166,7 +166,7 @@ MonoBehaviour:
   turnSpeedFactor: 0.8
   moveForce: 5
   rb: {fileID: 0}
---- !u!114 &3401671967290652064
+--- !u!114 &-1188484966289369784
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -175,13 +175,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1327633266519120271}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e784cc90208479d479614ad001c742b7, type: 3}
+  m_Script: {fileID: 11500000, guid: 266d14849b2e979468a338330a730c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pb: 2
-  initialenergy: 64
-  movecost: 1
-  maxenergy: 200
-  cellcount: 0
-  skillcost: 0
-  skill: 0
+  availableTypes: []
+  energy: 50
+  energyLimit: 100
+  energyUse: 1
+  idleCostFactor: 0.25
+  drainEnergy: 1
+  mainCellBody: {fileID: 0}
+  cellRoot: {fileID: 0}
+  baseSortingOrder: 0
+  mainCellType: {fileID: 0}
+  mainCellGrid: {x: 0, y: 0}

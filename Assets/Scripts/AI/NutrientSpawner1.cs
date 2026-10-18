@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -79,7 +79,7 @@ public class NutrientSpawner : MonoBehaviour
 
                 for (int i = 0; i < count; i++)
                 {
-                    em.NutrientType type = RollType();
+                    NutrientType type = RollType();
                     Vector2 pos = FindFreePosition(bxMin, bxMax, byMin, byMax, type);
                     SpawnOne(pos, type);
                 }
@@ -89,17 +89,17 @@ public class NutrientSpawner : MonoBehaviour
         Debug.Log($"[NutrientSpawner] 共生成 {spawned.Count} 个营养球");
     }
 
-    private em.NutrientType RollType()
+    private NutrientType RollType()
     {
         float total = wSmall + wMedium + wLarge;
         float r = Random.Range(0f, total);
-        if (r < wSmall) return em.NutrientType.Small;
-        if (r < wSmall + wMedium) return em.NutrientType.Medium;
-        return em.NutrientType.Large;
+        if (r < wSmall) return NutrientType.Small;
+        if (r < wSmall + wMedium) return NutrientType.Medium;
+        return NutrientType.Large;
     }
 
     // ===== 按类型大小自动算安全间距，大球留的空间更大 =====
-    private Vector2 FindFreePosition(float xMin, float xMax, float yMin, float yMax, em.NutrientType newType)
+    private Vector2 FindFreePosition(float xMin, float xMax, float yMin, float yMax, NutrientType newType)
     {
         float newRadius = GetSafeRadius(newType);
 
@@ -136,18 +136,18 @@ public class NutrientSpawner : MonoBehaviour
         return new Vector2(Random.Range(xMin, xMax), Random.Range(yMin, yMax));
     }
 
-    private float GetSafeRadius(em.NutrientType type)
+    private float GetSafeRadius(NutrientType type)
     {
         switch (type)
         {
-            case em.NutrientType.Small: return smallSize * 0.5f + 0.3f;
-            case em.NutrientType.Medium: return mediumSize * 0.5f + 0.3f;
-            case em.NutrientType.Large: return largeSize * 0.5f + 2.0f; // 大球形状不规则，余量给多
+            case NutrientType.Small: return smallSize * 0.5f + 0.3f;
+            case NutrientType.Medium: return mediumSize * 0.5f + 0.3f;
+            case NutrientType.Large: return largeSize * 0.5f + 2.0f; // 大球形状不规则，余量给多
             default: return 0.5f;
         }
     }
 
-    private void SpawnOne(Vector2 pos, em.NutrientType type)
+    private void SpawnOne(Vector2 pos, NutrientType type)
     {
         if (nutrientPrefab == null)
         {
@@ -181,10 +181,10 @@ public class NutrientSpawner : MonoBehaviour
         spawned.Add(go);
     }
 
-    private void ApplyCollider(GameObject go, em.NutrientType type, float scale)
+    private void ApplyCollider(GameObject go, NutrientType type, float scale)
     {
         // 小营养球用 Circle，中/大营养球用 Polygon
-        bool useCircle = (type == em.NutrientType.Small);
+        bool useCircle = (type == NutrientType.Small);
 
         var circle = go.GetComponent<CircleCollider2D>();
         var poly = go.GetComponent<PolygonCollider2D>();
@@ -228,35 +228,35 @@ public class NutrientSpawner : MonoBehaviour
         }
     }
 
-    public static int EnergyOf(em.NutrientType t)
+    public static int EnergyOf(NutrientType t)
     {
         switch (t)
         {
-            case em.NutrientType.Small: return 4;
-            case em.NutrientType.Medium: return 16;
-            case em.NutrientType.Large: return 64;
+            case NutrientType.Small: return 4;
+            case NutrientType.Medium: return 16;
+            case NutrientType.Large: return 64;
             default: return 0;
         }
     }
 
-    private Sprite SpriteOf(em.NutrientType t)
+    private Sprite SpriteOf(NutrientType t)
     {
         switch (t)
         {
-            case em.NutrientType.Small: return smallSprite;
-            case em.NutrientType.Medium: return mediumSprite;
-            case em.NutrientType.Large: return largeSprite;
+            case NutrientType.Small: return smallSprite;
+            case NutrientType.Medium: return mediumSprite;
+            case NutrientType.Large: return largeSprite;
             default: return null;
         }
     }
 
-    private float SizeOf(em.NutrientType t)
+    private float SizeOf(NutrientType t)
     {
         switch (t)
         {
-            case em.NutrientType.Small: return smallSize;
-            case em.NutrientType.Medium: return mediumSize;
-            case em.NutrientType.Large: return largeSize;
+            case NutrientType.Small: return smallSize;
+            case NutrientType.Medium: return mediumSize;
+            case NutrientType.Large: return largeSize;
             default: return 1f;
         }
     }
