@@ -24,6 +24,10 @@ public class move : MonoBehaviour
     }
     void Update()
     {
+        // 暂停时冻结玩家操作，避免 Update 里的 AddForce 在暂停期间持续累积
+        if (PauseController.Instance != null && PauseController.Instance.IsPaused)
+            return;
+
         // ========== 1. 鼠标坐标转换 ==========
         Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mouseWorld.z = 0f;

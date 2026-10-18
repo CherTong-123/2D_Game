@@ -38,7 +38,8 @@ public class DropArea : MonoBehaviour, IDropHandler
 
     void Update()
     {
-        bool hovering = DragImage.IsDragging && IsPointerOverGrid();
+        bool anyDragging = DragImage.IsDragging || PlacedCellDrag.IsDragging;
+        bool hovering = anyDragging && IsPointerOverGrid();
         if (highlight != null)
         {
             highlight.enabled = hovering;
@@ -47,7 +48,9 @@ public class DropArea : MonoBehaviour, IDropHandler
         // 未在拖动时右键：撤销最近一次成功放置
         if (Input.GetMouseButtonDown(1)
             && !DragImage.IsDragging
-            && !DragImage.SuppressUndo)
+            && !PlacedCellDrag.IsDragging
+            && !DragImage.SuppressUndo
+            && !PlacedCellDrag.SuppressUndo)
         {
             UndoLastPlacement();
         }
@@ -104,7 +107,7 @@ public class DropArea : MonoBehaviour, IDropHandler
 
         Debug.Log($"识别到细胞：{dragImage.EntityName}，放置成功");
         dragImage.MarkConsumed();
-        occupants.Add(ghost);
+        AddOccupant(ghost);
         undoStack.Push(new Placement { cell = dragImage, ghost = ghost });
     }
 
@@ -123,7 +126,7 @@ public class DropArea : MonoBehaviour, IDropHandler
         return go != null ? go.GetComponent<RectTransform>() : null;
     }
 
-    bool OverlapsOccupant(RectTransform rect)
+    public bool OverlapsOccupant(RectTransform rect)
     {
         for (int i = 0; i < occupants.Count; i++)
         {
@@ -131,6 +134,46 @@ public class DropArea : MonoBehaviour, IDropHandler
             if (RectsOverlap(rect, occupants[i])) return true;
         }
         return false;
+    }
+
+    public void AddOccupant(RectTransform rect)
+    {
+        if (rect != null && !occupants.Contains(rect))
+        {
+            occupants.Add(rect);
+        }
+    }
+
+    public void RemoveOccupant(RectTransform rect)
+    {
+        occupants.Remove(rect);
+    }
+
+    public bool IsFullyInsideGrid(RectTransform rect)
+    {
+        if (rect == null || rectTransform == null) return false;
+
+        Vector3[] corners = new Vector3[4];
+        rect.GetWorldCorners(corners);
+
+        Vector3[] gridCorners = new Vector3[4];
+        rectTransform.GetWorldCorners(gridCorners);
+
+        float minX = Mathf.Min(gridCorners[0].x, gridCorners[1].x, gridCorners[2].x, gridCorners[3].x);
+        float maxX = Mathf.Max(gridCorners[0].x, gridCorners[1].x, gridCorners[2].x, gridCorners[3].x);
+        float minY = Mathf.Min(gridCorners[0].y, gridCorners[1].y, gridCorners[2].y, gridCorners[3].y);
+        float maxY = Mathf.Max(gridCorners[0].y, gridCorners[1].y, gridCorners[2].y, gridCorners[3].y);
+
+        for (int i = 0; i < 4; i++)
+        {
+            Vector3 c = corners[i];
+            if (c.x < minX || c.x > maxX || c.y < minY || c.y > maxY)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     bool RectsOverlap(RectTransform a, RectTransform b)
@@ -162,11 +205,11 @@ public class DropArea : MonoBehaviour, IDropHandler
         if (placement.ghost != null)
         {
             occupants.Remove(placement.ghost);
+            Destroy(placement.ghost.gameObject);
         }
 
         if (placement.cell != null)
         {
-            placement.cell.Restore();
             Debug.Log($"已撤销一次拖动：{placement.cell.EntityName}");
         }
     }

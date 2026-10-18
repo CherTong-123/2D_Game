@@ -40,6 +40,10 @@ public class Intera_Get
             GameSpeed = value + 0.5f;
         else
             GameSpeed = value * 2f;
+
+        // 暂停时只记录速度，不立即应用，避免把暂停“解锁”
+        if (PauseController.Instance != null && PauseController.Instance.IsPaused)
+            return;
         Time.timeScale = GameSpeed;
     }
 }

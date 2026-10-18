@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.SearchService;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -16,8 +15,25 @@ public class PauseMenuUI : MonoBehaviour
 
     public void ContinueGame()
     {
+        if (PauseController.Instance != null)
+        {
+            PauseController.Instance.Resume();
+            return;
+        }
+
         PauseMenu.SetActive(false);
         Time.timeScale = 1f;
+    }
+    public void RestartGame()
+    {
+        if (PauseController.Instance != null)
+        {
+            PauseController.Instance.Restart();
+            return;
+        }
+
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
     public void openSetting()
     {
@@ -26,6 +42,15 @@ public class PauseMenuUI : MonoBehaviour
     public void closeSetting()
     {
         settingPanel.SetActive(false);
+    }
+    public bool CloseSettingsIfOpen()
+    {
+        if (settingPanel != null && settingPanel.activeSelf)
+        {
+            settingPanel.SetActive(false);
+            return true;
+        }
+        return false;
     }
     public void Mainmenu()
     {
