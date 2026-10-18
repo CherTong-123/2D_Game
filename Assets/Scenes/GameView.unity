@@ -1455,9 +1455,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   energyFill: {fileID: 1869115667}
   hpFill: {fileID: 212211809}
-  playerEnergy: {fileID: 3401671967317405779}
+  playerEnergy: {fileID: 8636626085848716220}
   playerCell: {fileID: 8636626085848716218}
-  energyMax: 200
   hpMax: 100
   darkColor: {r: 0, g: 0, b: 0, a: 0.70980394}
 --- !u!212 &43972519226366867
