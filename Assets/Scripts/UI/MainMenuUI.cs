@@ -47,6 +47,6 @@ public class MainMenuUI : MonoBehaviour
         }
         fadeController.alpha = 1f;
         yield return new WaitForSecondsRealtime(0.5f);
-        SceneManager.LoadScene("Game View");
+        SceneManager.LoadScene("GameView");
     }
 }
