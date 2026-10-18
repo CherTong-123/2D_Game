@@ -652,10 +652,10 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: Intera_Get, Assembly-CSharp
-        m_MethodName: SetMainVolume
-        m_Mode: 4
+      - m_Target: {fileID: 2898371516298317465}
+        m_TargetAssemblyTypeName: SettingsMenuUI, Assembly-CSharp
+        m_MethodName: MainVolumeChanged
+        m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -810,8 +810,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0.32015038}
-  m_SizeDelta: {x: 5.4, y: 35.9519}
+  m_AnchoredPosition: {x: 0.70000076, y: -3}
+  m_SizeDelta: {x: 6, y: 55.6318}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7721448809534274762
 CanvasRenderer:
@@ -1016,10 +1016,10 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: Intera_Get, Assembly-CSharp
-        m_MethodName: SetGameSpeed
-        m_Mode: 4
+      - m_Target: {fileID: 2898371516298317465}
+        m_TargetAssemblyTypeName: SettingsMenuUI, Assembly-CSharp
+        m_MethodName: OnSpeedChanged
+        m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -1489,7 +1489,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6221915776757543958}
   m_Layer: 5
-  m_Name: mainMusic
+  m_Name: MainVolume
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2792,7 +2792,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 2793116922487466980}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.5559607
+  m_Size: 0.5559585
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -3262,6 +3262,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3983431723707879429}
+  - component: {fileID: 2898371516298317465}
   m_Layer: 5
   m_Name: Setting_Pane
   m_TagString: Untagged
@@ -3291,6 +3292,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2898371516298317465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6683418492422338736}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c12c474529153f45b9e855e1503b85a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6731828571236386046
 GameObject:
   m_ObjectHideFlags: 0
@@ -3436,8 +3449,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.7073, y: 0}
-  m_SizeDelta: {x: 80.3605, y: 40}
+  m_AnchoredPosition: {x: 0.0000074506, y: 0}
+  m_SizeDelta: {x: 90, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &7326945718550633203
 GameObject:
@@ -4429,7 +4442,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.000077153025, y: 0}
+  m_AnchoredPosition: {x: 0.000077153025, y: -0.00005042831}
   m_SizeDelta: {x: 0, y: 1378.5668}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &8752892434742975101

@@ -2,23 +2,24 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Intera_Get : MonoBehaviour
+public class Intera_Get
 {
-   
-    private float MainVolume = 1.0f;
-    //private bool isHUD = true;
-    private float GameSpeed = 1.0f;
-
-    public static Intera_Get Instance { get; private set; }
-    private void Awake()
+    private static Intera_Get _instance;
+    public static Intera_Get Instance
     {
-        if (Instance != null && Instance != this)
+        get
         {
-            Destroy(gameObject);
-            return;
+            if (_instance == null)
+                _instance = new Intera_Get();
+            return _instance;
         }
-        DontDestroyOnLoad(gameObject);
     }
+    public float MainVolume = 1.0f;
+    //private bool isHUD = true;
+    public float GameSpeed = 1.0f;
+    private Intera_Get() { }
+
+
 
     //private void ChangeHUD()
     //{
@@ -31,7 +32,6 @@ public class Intera_Get : MonoBehaviour
     {
         MainVolume = value;
         AudioListener.volume = value;
-        Debug.Log(MainVolume);
     }
 
     public void SetGameSpeed(float value)
@@ -41,7 +41,5 @@ public class Intera_Get : MonoBehaviour
         else
             GameSpeed = value * 2f;
         Time.timeScale = GameSpeed;
-        Debug.Log(GameSpeed);
     }
-
 }
