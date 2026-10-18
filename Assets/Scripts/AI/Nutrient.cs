@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 /// <summary>
 /// 挂在营养球预制体上。记录类型与能量，被玩家或敌方细胞碰到时把能量加上去。
@@ -14,7 +14,7 @@ public class Nutrient : MonoBehaviour
 {
     /// <summary>场上所有活着的营养球。AI 遍历这个列表找最近目标，比 FindObjectsOfType 快很多。</summary>
     public static readonly List<Nutrient> All = new List<Nutrient>();
-    public em.NutrientType type;
+    public NutrientType type;
     public int energy;
     void OnEnable()
     {

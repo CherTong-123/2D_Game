@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 /// <summary>
 /// 敌方远程子弹。挂在一个圆形 Sprite 预制体上，预制体需要：
 ///   - SpriteRenderer
@@ -36,8 +36,6 @@ public class EnemyBullet : MonoBehaviour
         maincell cell = other.GetComponent<maincell>();
         if (cell != null) cell.TakeDamage(damage);
         // 附带：也扣一点能量（不需要就删掉这两行）
-        em energy = other.GetComponent<em>();
-        if (energy != null) energy.initialenergy -= damage * 0.5;
         Debug.Log($"[Bullet] 命中玩家 -{damage}");
         Destroy(gameObject);
     }
