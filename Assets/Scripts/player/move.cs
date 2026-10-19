@@ -1,64 +1,58 @@
-using System.Collections;
-using System.Collections.Generic;
+// 玩家输入在 Update 采样，移动和转向在固定物理帧执行。
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class move : MonoBehaviour
 {
-    [Header("旋转参数")]
-    public float maxAngularSpeed = 6f;    // 最大角速度（弧度/秒）
-    public float turnSpeedFactor = 0.8f;  // 变速系数：越大，大角度转向提速越明显
-
-    [Header("移动参数")]
+    [Header("转向")]
+    public float maxAngularSpeed = 6f;
+    public float turnSpeedFactor = 0.8f;
+    [Header("移动")]
+    [Tooltip("基础加速度，世界单位/秒平方")]
     public float moveForce = 5f;
+    public float maxSpeed = 12f;
     public Rigidbody2D rb;
-
-    // 计时调试用（保留你原来的打印逻辑）
-    private float printTimer = 0f;
-
-
-    void Start()
+    public Vector2 mapMin = new Vector2(-100, -100);
+    public Vector2 mapMax = new Vector2(100, 100);
+    public float MaxSpeed => maxSpeed * (microbe != null ? microbe.MovementMultiplier : 1f);
+    private Vector2 input;
+    private float targetAngle;
+    private Camera viewCamera;
+    private MicrobeController microbe;
+    private maincell health;
+    private void Awake()
     {
-        // 自动获取身上的 Rigidbody2D
-        if (rb == null)
-            rb = GetComponent<Rigidbody2D>();
+        rb = GetComponent<Rigidbody2D>();
+        microbe = GetComponent<MicrobeController>();
+        health = GetComponent<maincell>();
+        viewCamera = Camera.main;
     }
-    void Update()
+    private void Update()
     {
-        // 暂停时冻结玩家操作，避免 Update 里的 AddForce 在暂停期间持续累积
-        if (PauseController.Instance != null && PauseController.Instance.IsPaused)
-            return;
-
-        // ========== 1. 鼠标坐标转换 ==========
-        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        mouseWorld.z = 0f;
-
-        // ========== 2. 方向向量 ==========
-        Vector2 dir = (mouseWorld - transform.position).normalized;
-
-        // ========== 3. 目标角度（核心修正：-90度让物体上方对准鼠标） ==========
-        float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
-
-        // ========== 4. 当前角度 + 最短角度差 ==========
-        float currentAngle = transform.eulerAngles.z;
-        float angleDiff = Mathf.DeltaAngle(currentAngle, targetAngle);
-        // ========== 5. 变速转向逻辑（角度差越大，转得越快） ==========
-        // 基础最大步长
-        float baseStep = maxAngularSpeed * Mathf.Rad2Deg * Time.deltaTime;
-        // 变速：角度差越大，步长越大（0~1倍的比例）
-        float speedMultiplier = Mathf.Clamp01(Mathf.Abs(angleDiff) / 90f * turnSpeedFactor);
-        float rotateStep = baseStep * (1f + speedMultiplier);
-        // 限制步长，保证走最短路径，不会绕大圈
-        float newAngle = currentAngle + Mathf.Clamp(angleDiff, -rotateStep, rotateStep);
-        // ========== 6. 应用旋转 ==========
-        transform.rotation = Quaternion.Euler(0f, 0f, newAngle);
-        // ========== 原有 WASD 移动逻辑 ==========
-        if (Input.GetKey(KeyCode.W))
-            rb.AddForce(Vector2.up * moveForce);
-        if (Input.GetKey(KeyCode.S))
-            rb.AddForce(Vector2.down * moveForce);
-        if (Input.GetKey(KeyCode.D))
-            rb.AddForce(Vector2.right * moveForce);
-        if (Input.GetKey(KeyCode.A))
-            rb.AddForce(Vector2.left * moveForce);
+        if (Time.timeScale == 0 || (health != null && health.IsDead)) { input = Vector2.zero; return; }
+        input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
+        Vector2 direction = viewCamera.ScreenToWorldPoint(Input.mousePosition) - transform.position;
+        targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+    }
+    private void FixedUpdate()
+    {
+        if (health != null && health.IsDead) return;
+        float multiplier = microbe != null ? microbe.MovementMultiplier : 1f;
+        rb.AddForce(input * moveForce * rb.mass * multiplier);
+        rb.velocity = Vector2.ClampMagnitude(rb.velocity, MaxSpeed);
+        float delta = Mathf.DeltaAngle(rb.rotation, targetAngle);
+        float step = maxAngularSpeed * Mathf.Rad2Deg * Time.fixedDeltaTime * (1f + Mathf.Clamp01(Mathf.Abs(delta) / 90f * turnSpeedFactor));
+        rb.MoveRotation(rb.rotation + Mathf.Clamp(delta, -step, step));
+        Vector2 position = rb.position;
+        Vector2 clamped = new Vector2(Mathf.Clamp(position.x, mapMin.x + 7.5f, mapMax.x - 7.5f),
+            Mathf.Clamp(position.y, mapMin.y + 7.5f, mapMax.y - 7.5f));
+        if (position != clamped)
+        {
+            rb.position = clamped;
+            Vector2 velocity = rb.velocity;
+            if (position.x != clamped.x) velocity.x = 0;
+            if (position.y != clamped.y) velocity.y = 0;
+            rb.velocity = velocity;
+        }
     }
 }

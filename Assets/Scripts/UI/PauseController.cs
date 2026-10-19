@@ -1,97 +1,23 @@
-using System;
+// 暂停与分裂共用按键入口，保证一次 Esc 只关闭当前界面。
 using UnityEngine;
-using UnityEngine.SceneManagement;
-
 public class PauseController : MonoBehaviour
 {
-    public static PauseController Instance { get; private set; }
-
     [SerializeField] private GameObject PauseMenu;
-
-    public bool IsPaused { get; private set; }
-
-    [SerializeField] private bool pauseAudio = true;
-    private bool audioPaused;
-
-    /// <summary>暂停状态变化时广播，其他系统可订阅（例如停止/恢复 BGM、动画）。</summary>
-    public event Action<bool> OnPauseChanged;
-
-    private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-
-        if (PauseMenu != null)
-            PauseMenu.SetActive(false);
-    }
-
+    private SplitScreenUI split;
+    private MicrobeController player;
+    public void Configure(GameObject menu, SplitScreenUI splitScreen, MicrobeController microbe)
+    { PauseMenu = menu; split = splitScreen; player = microbe; }
     private void Update()
     {
+        if (player.IsDead) return;
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (IsPaused)
-            {
-                var menuUI = PauseMenu != null ? PauseMenu.GetComponent<PauseMenuUI>() : null;
-                if (menuUI != null && menuUI.CloseSettingsIfOpen())
-                    return;
-            }
-            TogglePause();
+            if (split.IsOpen) split.SetOpen(false);
+            else if (PauseMenu.activeSelf) ResumeGame();
+            else PauseGame();
         }
+        else if (Input.GetKeyDown(KeyCode.Tab) && !PauseMenu.activeSelf) split.SetOpen(!split.IsOpen);
     }
-
-    public void TogglePause()
-    {
-        if (IsPaused) Resume();
-        else Pause();
-    }
-
-    public void Pause()
-    {
-        IsPaused = true;
-        Time.timeScale = 0f;
-        if (pauseAudio)
-        {
-            audioPaused = true;
-            AudioListener.pause = true;
-        }
-        if (PauseMenu != null) PauseMenu.SetActive(true);
-        OnPauseChanged?.Invoke(true);
-    }
-
-    public void Resume()
-    {
-        IsPaused = false;
-        // 恢复到玩家设置的游戏速度，而不是写死 1
-        Time.timeScale = Intera_Get.Instance.GameSpeed;
-        if (audioPaused)
-        {
-            audioPaused = false;
-            AudioListener.pause = false;
-        }
-        if (PauseMenu != null) PauseMenu.SetActive(false);
-        OnPauseChanged?.Invoke(false);
-    }
-
-    public void Restart()
-    {
-        Resume();
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-
-    private void OnDestroy()
-    {
-        if (Instance == this)
-            Instance = null;
-
-        // AudioListener.pause 是全局状态，离开场景时确保恢复，避免带到主菜单
-        if (audioPaused)
-        {
-            audioPaused = false;
-            AudioListener.pause = false;
-        }
-    }
+    public void PauseGame() { PauseMenu.SetActive(true); Intera_Get.Instance.SetMenuPaused(true); }
+    public void ResumeGame() { PauseMenu.SetActive(false); Intera_Get.Instance.SetMenuPaused(false); }
 }

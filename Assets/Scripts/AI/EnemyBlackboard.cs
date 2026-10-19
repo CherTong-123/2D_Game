@@ -46,6 +46,13 @@ public class EnemyBlackboard : MonoBehaviour
     [Header("能量")]
     public float energy = 100f;
     public float maxEnergy = 400f;
+    [Header("生命值")]
+    public int hp = 100;
+    public void TakeDamage(int amount)
+    {
+        hp = Mathf.Max(0, hp - amount);
+        if (hp == 0) { gameObject.SetActive(false); Destroy(gameObject); }
+    }
     // ---------- 运行时感知结果（AI 每帧刷新，节点只读） ----------
     [HideInInspector] public Transform targetPlayer;
     [HideInInspector] public Nutrient targetNutrient;
@@ -98,6 +105,8 @@ public class EnemyBlackboard : MonoBehaviour
     Transform InRange(Transform t)
     {
         if (t == null) return null;
+        var health = t.GetComponent<maincell>();
+        if (health != null && health.IsDead) return null;
         float sqr = ((Vector2)t.position - (Vector2)transform.position).sqrMagnitude;
         return sqr <= senseRadius * senseRadius ? t : null;
     }
@@ -134,7 +143,7 @@ public class EnemyBlackboard : MonoBehaviour
     {
         if (!avoidDanger) return null;
         // ---- 双阈值：逃跑状态切换用不同的扫描半径 ----
-        float radius = fleeing ? fleeExitRadius : escapeRadius;
+        float radius = fleeing ? Mathf.Max(fleeExitRadius, escapeRadius + 1f) : escapeRadius;
         float sqrMax = radius * radius;
         Transform best = null;
         float bestSqr = sqrMax;

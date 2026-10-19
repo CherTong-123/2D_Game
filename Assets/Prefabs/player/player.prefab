@@ -178,7 +178,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 266d14849b2e979468a338330a730c43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  availableTypes: []
+  availableTypes:
+  - {fileID: 11400000, guid: f064d43e7e0620342891d7d04a9b0d8a, type: 2}
+  - {fileID: 11400000, guid: 5b3c03ce6d374a3e8ecadd1d64800180, type: 2}
+  - {fileID: 11400000, guid: fa406024c8004e619b594a224b309a99, type: 2}
+  - {fileID: 11400000, guid: 6d377a15475c4263845111f4eccff7ff, type: 2}
+  - {fileID: 11400000, guid: 9b54e40254fd4a0791a71ac0d2f5c800, type: 2}
+  - {fileID: 11400000, guid: ab3bea1c8f5f4af0a1fb107aff79145b, type: 2}
+  - {fileID: 11400000, guid: 1bad244d66bb41bbb3e1cc82e4cc4ac5, type: 2}
+  - {fileID: 11400000, guid: 85b02278e2dc4897a5b13cae081955ce, type: 2}
+  - {fileID: 11400000, guid: b612eeef7f494465aa257d811f956ef9, type: 2}
   energy: 50
   energyLimit: 100
   energyUse: 1
@@ -187,5 +196,5 @@ MonoBehaviour:
   mainCellBody: {fileID: 0}
   cellRoot: {fileID: 0}
   baseSortingOrder: 0
-  mainCellType: {fileID: 0}
-  mainCellGrid: {x: 0, y: 0}
+  mainCellType: {fileID: 11400000, guid: 168ccdcdc86e465581f70f2438954568, type: 2}
+  mainCellGrid: {x: -1, y: -1}

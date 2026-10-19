@@ -1,49 +1,23 @@
-using System.Collections;
-using System.Collections.Generic;
+// 全局音量、速度和界面暂停状态。暂停期间调速只更新选择值。
 using UnityEngine;
-
 public class Intera_Get
 {
-    private static Intera_Get _instance;
-    public static Intera_Get Instance
-    {
-        get
-        {
-            if (_instance == null)
-                _instance = new Intera_Get();
-            return _instance;
-        }
-    }
-    public float MainVolume = 1.0f;
-    //private bool isHUD = true;
-    public float GameSpeed = 1.0f;
+    public static Intera_Get Instance { get; } = new Intera_Get();
+    public float MainVolume = 1f;
+    public float GameSpeed = 1f;
+    public bool MenuPaused { get; private set; }
+    public bool SplitPaused { get; private set; }
+    public bool IsPaused => MenuPaused || SplitPaused;
     private Intera_Get() { }
-
-
-
-    //private void ChangeHUD()
-    //{
-    //    isHUD = isHUD ? false : true;
-    //    if (!isHUD)
-    //        
-    //}
-
-    public void SetMainVolume(float value)
-    {
-        MainVolume = value;
-        AudioListener.volume = value;
-    }
-
+    public void SetMainVolume(float value) { MainVolume = Mathf.Clamp01(value); AudioListener.volume = MainVolume; }
     public void SetGameSpeed(float value)
     {
-        if (value <= 0.5)
-            GameSpeed = value + 0.5f;
-        else
-            GameSpeed = value * 2f;
-
-        // 暂停时只记录速度，不立即应用，避免把暂停“解锁”
-        if (PauseController.Instance != null && PauseController.Instance.IsPaused)
-            return;
-        Time.timeScale = GameSpeed;
+        value = Mathf.Clamp01(value);
+        GameSpeed = value <= 0.5f ? value + 0.5f : value * 2f;
+        ApplyTime();
     }
+    public void SetMenuPaused(bool value) { MenuPaused = value; ApplyTime(); }
+    public void SetSplitPaused(bool value) { SplitPaused = value; ApplyTime(); }
+    public void ResetPause() { MenuPaused = SplitPaused = false; ApplyTime(); }
+    private void ApplyTime() { Time.timeScale = IsPaused ? 0f : GameSpeed; }
 }

@@ -1,76 +1,54 @@
+// 暂停菜单：继续、重开、设置和返回主菜单。
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
+using UnityEngine.UI;
 public class PauseMenuUI : MonoBehaviour
 {
     [SerializeField] private GameObject settingPanel;
-    [SerializeField] CanvasGroup pauseMenu;
-
-
     [SerializeField] private CanvasGroup fadeController;
-    [SerializeField] private UnityEngine.UI.Image fadeImage;
+    [SerializeField] private Image fadeImage;
     [SerializeField] private GameObject PauseMenu;
-
+    public MicrobeController player;
+    private bool changingScene;
+    private void Awake()
+    {
+        foreach (var button in GetComponentsInChildren<Button>(true))
+        {
+            if (button.name == "Continue") button.onClick.AddListener(ContinueGame);
+            if (button.name == "Restart") button.onClick.AddListener(RestartGame);
+        }
+        fadeController.alpha = 0;
+        fadeImage.raycastTarget = false;
+    }
+    private void OnEnable()
+    {
+        foreach (var button in GetComponentsInChildren<Button>(true))
+            if (button.name == "Continue") button.interactable = player == null || !player.IsDead;
+    }
     public void ContinueGame()
     {
-        if (PauseController.Instance != null)
-        {
-            PauseController.Instance.Resume();
-            return;
-        }
-
-        PauseMenu.SetActive(false);
-        Time.timeScale = 1f;
-    }
-    public void RestartGame()
-    {
-        if (PauseController.Instance != null)
-        {
-            PauseController.Instance.Restart();
-            return;
-        }
-
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-    public void openSetting()
-    {
-        settingPanel.SetActive(true);
-    }
-    public void closeSetting()
-    {
+        if (player != null && player.IsDead) return;
         settingPanel.SetActive(false);
+        PauseMenu.SetActive(false);
+        Intera_Get.Instance.SetMenuPaused(false);
     }
-    public bool CloseSettingsIfOpen()
+    public void openSetting() { settingPanel.SetActive(true); }
+    public void closeSetting() { settingPanel.SetActive(false); }
+    public void Mainmenu() { ChangeScene("MainMenu"); }
+    public void RestartGame() { ChangeScene("GameView"); }
+    private void ChangeScene(string scene)
     {
-        if (settingPanel != null && settingPanel.activeSelf)
-        {
-            settingPanel.SetActive(false);
-            return true;
-        }
-        return false;
-    }
-    public void Mainmenu()
-    {
+        if (changingScene) return;
+        changingScene = true;
         fadeImage.raycastTarget = true;
-        StartCoroutine(FadeToBlack());
+        StartCoroutine(FadeToScene(scene));
     }
-
-    private IEnumerator FadeToBlack()
+    private IEnumerator FadeToScene(string scene)
     {
-        float duration = 0.5f;
-        float timer = 0f;
-        while (timer < duration)
-        {
-            timer += Time.unscaledDeltaTime;
-            fadeController.alpha = timer / duration;
-            yield return null;
-        }
-        fadeController.alpha = 1f;
-        yield return new WaitForSecondsRealtime(0.5f);
-        Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu");
+        for (float t = 0; t < 0.5f; t += Time.unscaledDeltaTime)
+        { fadeController.alpha = t / 0.5f; yield return null; }
+        Intera_Get.Instance.ResetPause();
+        SceneManager.LoadScene(scene);
     }
 }

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
+  m_Name: ToughCellA
+  m_EditorClassIdentifier:
+  id: "toughcell_a"
+  displayName: "\u97e7\u6027\u7ec6\u80dea"
+  description: "\u751f\u547d\u8f83\u9ad8\uff0c\u65e0\u6cd5\u4f20\u9012\u86cb\u767d\u3002"
+  hp: 180
+  cellsize: 1
+  pmt: 0
+  attach: 1
+  cost: 60
+  divity: 0
+  link: 0
+  eat: 0
+  function: 7
+  storageBonus: 100
+  movementBonus: 0.15
+  contactDamage: 100
+  productionInterval: 3
+  receivingPause: 1
+  proteinDamage: 15
+  slowMultiplier: 0.5
+  slowDuration: 2
+  spraySpeed: 20
+  icon: {fileID: 0}
+  body: {fileID: 0}
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  placeholderColor: {r: 0.6, g: 0.6, b: 0.7, a: 1}

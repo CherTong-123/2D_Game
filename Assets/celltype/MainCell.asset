@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
+  m_Name: MainCell
+  m_EditorClassIdentifier:
+  id: "maincell"
+  displayName: "\u4e3b\u7ec6\u80de"
+  description: "\u4e3b\u7ec6\u80de\u88ab\u51fb\u6bc1\u540e\u6e38\u620f\u7ed3\u675f\u3002"
+  hp: 300
+  cellsize: 9
+  pmt: 0
+  attach: 1
+  cost: 0
+  divity: 1
+  link: 1
+  eat: 1
+  function: 0
+  storageBonus: 100
+  movementBonus: 0.15
+  contactDamage: 100
+  productionInterval: 3
+  receivingPause: 1
+  proteinDamage: 15
+  slowMultiplier: 0.5
+  slowDuration: 2
+  spraySpeed: 20
+  icon: {fileID: 1371863277, guid: e496aec49a2de3145847fc0bb47dba0f, type: 3}
+  body: {fileID: 1371863277, guid: e496aec49a2de3145847fc0bb47dba0f, type: 3}
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  placeholderColor: {r: 0.6, g: 0.9, b: 1, a: 1}

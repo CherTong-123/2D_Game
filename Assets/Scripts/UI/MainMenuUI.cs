@@ -1,21 +1,25 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
+
+
 using UnityEngine.SceneManagement;
-using UnityEngine.UIElements;
+
 using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour
 {
+    private bool starting;
+    private void Awake() { Intera_Get.Instance.ResetPause(); }
     public GameObject settingsPanel;
-    
+
     [SerializeField]private CanvasGroup fadeController;
     [SerializeField]private UnityEngine.UI.Image fadeImage;
     public void StartGame()
     {
+        if (starting) return;
+        starting = true;
         fadeImage.raycastTarget = true;
         StartCoroutine(FadeToBlack());
     }
@@ -23,7 +27,7 @@ public class MainMenuUI : MonoBehaviour
     public void OpenSettings()
     {
         settingsPanel.SetActive(true);
-        
+
     }
     public void CloseSettings()
     {
@@ -41,7 +45,7 @@ public class MainMenuUI : MonoBehaviour
         float timer = 0f;
         while (timer < duration)
         {
-            timer += Time.deltaTime;
+            timer += Time.unscaledDeltaTime;
             fadeController.alpha = timer / duration;
             yield return null;
         }
