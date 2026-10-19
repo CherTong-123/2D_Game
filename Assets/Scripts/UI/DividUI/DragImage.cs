@@ -23,6 +23,7 @@ public class DragImage : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
 
     RectTransform ghostRect;
     EntityPhoto ghostPhoto;
+    Image ghostImage;
 
     PointerEventData currentEventData;
     bool dragging;
@@ -108,7 +109,12 @@ public class DragImage : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         if (pendingConsume)
         {
             pendingConsume = false;
-            gameObject.SetActive(false); // 原列表项失活，幽灵图留在悬浮位置
+            SetGhostSolid(); // 放手后实影
+            EnableGhostInteraction(); // 让 Grid 上的实体可再次拖动
+            ghostRect = null;
+            ghostPhoto = null;
+            ghostImage = null;
+            SetCellVisual(false); // 原列表项保留，可继续拖
             return;
         }
 
@@ -120,19 +126,6 @@ public class DragImage : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
     public void MarkConsumed()
     {
         pendingConsume = true;
-    }
-
-    public void Restore()
-    {
-        canceled = false;
-        dragging = false;
-        IsDragging = false;
-        pendingConsume = false;
-        currentEventData = null;
-
-        DestroyGhost();
-        gameObject.SetActive(true);
-        SetCellVisual(false);
     }
 
     void CancelDrag(PointerEventData eventData)
@@ -162,9 +155,10 @@ public class DragImage : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
         ghostGo.transform.SetParent(DropArea.Instance != null ? DropArea.Instance.transform : canvas.transform, false);
         ghostGo.AddComponent<LayoutElement>().ignoreLayout = true;
 
-        Image ghostImage = ghostGo.GetComponent<Image>();
+        ghostImage = ghostGo.GetComponent<Image>();
         ghostImage.sprite = entityPhotoSprite;
         ghostImage.raycastTarget = false;
+        ghostImage.color = new Color(1f, 1f, 1f, 0.5f); // 拖动时淡影
 
         ghostRect = ghostGo.GetComponent<RectTransform>();
         ghostRect.pivot = new Vector2(0.5f, 0.5f);
@@ -250,6 +244,36 @@ public class DragImage : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDra
             ghostPhoto = null;
         }
         ghostRect = null;
+        ghostImage = null;
+    }
+
+    void SetGhostSolid()
+    {
+        if (ghostImage != null)
+        {
+            Color c = ghostImage.color;
+            c.a = 1f;
+            ghostImage.color = c;
+        }
+    }
+
+    void EnableGhostInteraction()
+    {
+        if (ghostImage != null)
+        {
+            ghostImage.raycastTarget = true;
+        }
+
+        CanvasGroup cg = ghostImage != null ? ghostImage.GetComponent<CanvasGroup>() : null;
+        if (cg != null)
+        {
+            cg.blocksRaycasts = true;
+        }
+
+        if (ghostImage != null && ghostImage.GetComponent<PlacedCellDrag>() == null)
+        {
+            ghostImage.gameObject.AddComponent<PlacedCellDrag>();
+        }
     }
 
     void SetCellVisual(bool draggingState)
