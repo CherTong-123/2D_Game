@@ -11,10 +11,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
   m_Name: BankCell
-  m_EditorClassIdentifier:
-  id: "bankcell"
-  displayName: "\u50a8\u80fd\u7ec6\u80de"
-  description: "\u80fd\u91cf\u4e0a\u9650\u589e\u52a0 100\uff0c\u53ef\u4ee5\u4f20\u9012\u86cb\u767d\u3002"
+  m_EditorClassIdentifier: 
+  id: bankcell
+  displayName: "\u50A8\u80FD\u7EC6\u80DE"
+  description: "\u80FD\u91CF\u4E0A\u9650\u589E\u52A0 100\uFF0C\u53EF\u4EE5\u4F20\u9012\u86CB\u767D\u3002"
   hp: 100
   cellsize: 1
   pmt: 2
@@ -33,7 +33,7 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowDuration: 2
   spraySpeed: 20
-  icon: {fileID: -613678695, guid: e03f4252d1849924e8037be314f0d5ed, type: 3}
+  icon: {fileID: 21300000, guid: c4a0672dabf98e143aba121827b8ba16, type: 3}
   body: {fileID: -613678695, guid: e03f4252d1849924e8037be314f0d5ed, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
   placeholderColor: {r: 0.5, g: 0.8, b: 1, a: 1}
