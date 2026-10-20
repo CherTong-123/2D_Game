@@ -55,8 +55,6 @@ public class CellType : ScriptableObject
     public float slowMultiplier = 0.5f;
     [Tooltip("减速持续时间，秒")]
     public float slowDuration = 2f;
-    [Tooltip("喷射细胞发射蛋白的速度，世界单位/秒")]
-    public float spraySpeed = 20f;
 
     [Header("表现 —— 美术后期直接替换这几张图")]
     [Tooltip("右侧列表里的图标")]
@@ -65,6 +63,14 @@ public class CellType : ScriptableObject
     public Sprite body;
     [Tooltip("染色")]
     public Color tint = Color.white;
+
+    [Header("弹幕（子弹）")]
+    [Tooltip("该细胞发射的弹幕贴图。留空时弹幕使用占位色块")]
+    public Sprite projectileSprite;
+    [Tooltip("弹幕飞行速度，世界单位/秒")]
+    public float projectileSpeed = 4f;
+    [Tooltip("弹幕显示尺寸，世界单位（按贴图长边）")]
+    public float projectileSize = 0.65f;
 
     [Header("占位")]
     [Tooltip("没填 body 时自动生成的颜色（后期填了 body 就用不到了）")]

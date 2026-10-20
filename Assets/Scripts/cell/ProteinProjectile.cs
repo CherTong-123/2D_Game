@@ -13,13 +13,25 @@ public class ProteinProjectile : MonoBehaviour
     {
         var go = new GameObject("Protein_" + kind);
         go.transform.position = position;
-        go.transform.localScale = Vector3.one * 0.65f;
         var renderer = go.AddComponent<SpriteRenderer>();
-        renderer.sprite = MicrobeController.PlaceholderSprite();
-        renderer.color = kind == ProteinKind.Damage ? new Color(1f, 0.35f, 0.3f) : new Color(0.3f, 0.8f, 1f);
+        Sprite bulletSprite = source != null && source.type != null ? source.type.projectileSprite : null;
+        bool useCustomSprite = bulletSprite != null;
+        renderer.sprite = useCustomSprite ? bulletSprite : MicrobeController.PlaceholderSprite();
+        renderer.color = useCustomSprite
+            ? Color.white
+            : (kind == ProteinKind.Damage ? new Color(1f, 0.35f, 0.3f) : new Color(0.3f, 0.8f, 1f));
         renderer.sortingOrder = 1100;
+
+        float size = source != null && source.type != null ? source.type.projectileSize : 0.65f;
+        Vector2 bounds = renderer.sprite.bounds.size;
+        float maxDim = Mathf.Max(bounds.x, bounds.y);
+        if (maxDim < 0.0001f) maxDim = 1f;
+        go.transform.localScale = Vector3.one * (size / maxDim);
+
+        var collider = go.AddComponent<CircleCollider2D>();
+        collider.isTrigger = true;
+        collider.radius = maxDim * 0.5f;
         if (kind == ProteinKind.Damage) go.AddComponent<ThreatMarker>();
-        go.AddComponent<CircleCollider2D>().isTrigger = true;
         var rb = go.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;

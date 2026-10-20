@@ -36,6 +36,8 @@ public class PauseMenuUI : MonoBehaviour
     }
     public void openSetting() { AudioManager.Instance.PlayUI(); settingPanel.SetActive(true); }
     public void closeSetting() { AudioManager.Instance.PlayUI(); settingPanel.SetActive(false); }
+    public bool IsSettingOpen => settingPanel != null && settingPanel.activeSelf;
+    public void HideSetting() { if (settingPanel != null) settingPanel.SetActive(false); }
     public void Mainmenu() { AudioManager.Instance.PlayUI(); ChangeScene("MainMenu"); }
     public void RestartGame() { AudioManager.Instance.PlayUI(); ChangeScene("GameView"); }
     private void ChangeScene(string scene)
