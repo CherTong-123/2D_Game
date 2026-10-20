@@ -33,7 +33,7 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowDuration: 2
   spraySpeed: 20
-  icon: {fileID: 0}
-  body: {fileID: 0}
+  icon: {fileID: 40749870, guid: d872ffcb24222194baba928ad01938c6, type: 3}
+  body: {fileID: 40749870, guid: d872ffcb24222194baba928ad01938c6, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
   placeholderColor: {r: 1, g: 0.4, b: 0.35, a: 1}

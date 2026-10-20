@@ -29,14 +29,15 @@ public class PauseMenuUI : MonoBehaviour
     public void ContinueGame()
     {
         if (player != null && player.IsDead) return;
+        AudioManager.Instance.PlayPauseClose();
         settingPanel.SetActive(false);
         PauseMenu.SetActive(false);
         Intera_Get.Instance.SetMenuPaused(false);
     }
-    public void openSetting() { settingPanel.SetActive(true); }
-    public void closeSetting() { settingPanel.SetActive(false); }
-    public void Mainmenu() { ChangeScene("MainMenu"); }
-    public void RestartGame() { ChangeScene("GameView"); }
+    public void openSetting() { AudioManager.Instance.PlayUI(); settingPanel.SetActive(true); }
+    public void closeSetting() { AudioManager.Instance.PlayUI(); settingPanel.SetActive(false); }
+    public void Mainmenu() { AudioManager.Instance.PlayUI(); ChangeScene("MainMenu"); }
+    public void RestartGame() { AudioManager.Instance.PlayUI(); ChangeScene("GameView"); }
     private void ChangeScene(string scene)
     {
         if (changingScene) return;

@@ -11,7 +11,11 @@ using UnityEngine.UI;
 public class MainMenuUI : MonoBehaviour
 {
     private bool starting;
-    private void Awake() { Intera_Get.Instance.ResetPause(); }
+    private void Awake()
+    {
+        Intera_Get.Instance.ResetPause();
+        AudioManager.Instance.PlayMenuMusic();
+    }
     public GameObject settingsPanel;
 
     [SerializeField]private CanvasGroup fadeController;
@@ -19,6 +23,7 @@ public class MainMenuUI : MonoBehaviour
     public void StartGame()
     {
         if (starting) return;
+        AudioManager.Instance.PlayUI();
         starting = true;
         fadeImage.raycastTarget = true;
         StartCoroutine(FadeToBlack());
@@ -26,15 +31,18 @@ public class MainMenuUI : MonoBehaviour
     //public void ContinueGame(){}
     public void OpenSettings()
     {
+        AudioManager.Instance.PlayUI();
         settingsPanel.SetActive(true);
 
     }
     public void CloseSettings()
     {
+        AudioManager.Instance.PlayUI();
         settingsPanel.SetActive(false);
     }
     public void QuitGame()
     {
+        AudioManager.Instance.PlayUI();
         Application.Quit();
         Debug.Log("游戏结束");
     }
