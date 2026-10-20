@@ -149,6 +149,7 @@ public class MicrobeController : MonoBehaviour, INutrientEater
     }
     public void GainEnergy(int amount)
     {
+        ScoreManager.GainEnergy(amount);   // ← 加分：每 1 能量 +1 分
         if (IsDead) return;
         energy += Mathf.Min(Mathf.Max(0, amount), Mathf.Max(0, energyLimit - energy));
         Changed?.Invoke();
