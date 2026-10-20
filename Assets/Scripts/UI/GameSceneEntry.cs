@@ -19,6 +19,7 @@ public class GameSceneEntry : MonoBehaviour
     private SplitScreenUI split;
     private PauseController pause;
     private TimeHUD timeHud;
+    private TimeHUD countdownHud;
     private ScoreHUD scoreHud;
 
     private IEnumerator Start()
@@ -87,7 +88,14 @@ public class GameSceneEntry : MonoBehaviour
         var timeHudObject = new GameObject("TimeHUD", typeof(RectTransform));
         timeHudObject.transform.SetParent(canvas.transform, false);
         timeHud = timeHudObject.AddComponent<TimeHUD>();
+        timeHud.Configure(new Vector2(960f, 1010f), 1f, true, false, 0f);
         timeHud.Initialize();
+
+        var countdownObject = new GameObject("CountdownHUD", typeof(RectTransform));
+        countdownObject.transform.SetParent(canvas.transform, false);
+        countdownHud = countdownObject.AddComponent<TimeHUD>();
+        countdownHud.Configure(new Vector2(960f, 920f), 0.5f, false, true, 180f);
+        countdownHud.Initialize();
 
         var scoreHudObject = new GameObject("ScoreHUD", typeof(RectTransform));
         scoreHudObject.transform.SetParent(canvas.transform, false);
