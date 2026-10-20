@@ -21,7 +21,7 @@ public class TimeHUD : MonoBehaviour
     private const float ColonFileX = 1098f;
     private const float ColonFileY = 84f;
     private const float BgFileX = 1116f;
-    private const float BgFileY = 126f;
+    private const float BgFileY = 176f;
 
     // 界面上的槽位（1920x1080 参考空间，原点在左下）。
     // 布局为 分十位 / 分个位 / 冒号 / 秒十位 / 秒个位。

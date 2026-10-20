@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class SplitScreenUI : MonoBehaviour
@@ -73,13 +74,6 @@ public class SplitScreenUI : MonoBehaviour
             followWasEnabled = follow != null && follow.enabled;
             if (follow != null) follow.enabled = false;
             mainCamera.orthographicSize = 28f;
-            // 将主细胞放在左侧操作区中央。
-            Canvas.ForceUpdateCanvases();
-            Vector2 center = RectTransformUtility.WorldToScreenPoint(null, gridArea.TransformPoint(gridArea.rect.center));
-            Vector2 offset = (center / new Vector2(Screen.width, Screen.height) - Vector2.one * 0.5f);
-            Vector2 worldOffset = new Vector2(offset.x * mainCamera.orthographicSize * 2f * mainCamera.aspect, offset.y * mainCamera.orthographicSize * 2f);
-            Vector2 p = (Vector2)microbe.mainCellBody.position - worldOffset;
-            mainCamera.transform.position = new Vector3(p.x, p.y, savedPosition.z);
         }
         else
         {
@@ -92,12 +86,15 @@ public class SplitScreenUI : MonoBehaviour
     {
         if (!IsOpen) return;
         bool inGrid = PointerInGrid() && !detailPanel.activeSelf;
+
+        // WASD 平移在分裂期间始终生效，作用区域覆盖整个画面，必然包含玩家。
+        Vector2 pan = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        mainCamera.transform.position += (Vector3)(pan * mainCamera.orthographicSize * Time.unscaledDeltaTime);
+
         if (inGrid)
         {
             float scroll = Input.GetAxis("Mouse ScrollWheel");
             mainCamera.orthographicSize = Mathf.Clamp(mainCamera.orthographicSize - scroll * 12f, 10f, 65f);
-            Vector2 pan = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-            mainCamera.transform.position += (Vector3)(pan * mainCamera.orthographicSize * Time.unscaledDeltaTime);
             if (Input.GetMouseButtonDown(1)) { selectedCell = null; reason = ""; }
             if (Selected != null && Input.GetKeyDown(KeyCode.R)) rotation = (rotation + 90) % 360;
             if (Input.GetMouseButtonDown(0)) ClickGrid();
@@ -143,7 +140,12 @@ public class SplitScreenUI : MonoBehaviour
         for (int i = 0; i < slots.Count; i++) slots[i].color = i == SelectedIndex ? new Color(0.4f, 0.8f, 1f) : Color.white;
     }
     private Vector2Int MouseGrid() => microbe.Grid.WorldToGrid(mainCamera.ScreenToWorldPoint(Input.mousePosition));
-    private bool PointerInGrid() => RectTransformUtility.RectangleContainsScreenPoint(gridArea, Input.mousePosition);
+    private bool PointerInGrid()
+    {
+        Vector2 mouse = Input.mousePosition;
+        if (mouse.x < 0f || mouse.x > Screen.width || mouse.y < 0f || mouse.y > Screen.height) return false;
+        return EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject();
+    }
     private void UpdatePreview(bool inGrid)
     {
         if (Selected == null)
