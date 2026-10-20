@@ -32,7 +32,6 @@ MonoBehaviour:
   proteinDamage: 15
   slowMultiplier: 0.5
   slowDuration: 2
-  spraySpeed: 20
   icon: {fileID: -189787369, guid: 9167b7c363ebecf47a2bae3947e2dccd, type: 3}
   body: {fileID: -189787369, guid: 9167b7c363ebecf47a2bae3947e2dccd, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}

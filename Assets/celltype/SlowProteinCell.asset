@@ -33,8 +33,10 @@ MonoBehaviour:
   proteinDamage: 15
   slowMultiplier: 0.5
   slowDuration: 2
-  spraySpeed: 20
   icon: {fileID: 21300000, guid: 2287f316bfbf3e14bb0a1db98d2965f9, type: 3}
   body: {fileID: -380100642, guid: aa2cd7d2c49bda34f8ba046a30645c4b, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
+  projectileSprite: {fileID: -1434848595, guid: caba175a31a28d947ad40331c943143d, type: 3}
+  projectileSpeed: 4
+  projectileSize: 0.65
   placeholderColor: {r: 0.4, g: 0.6, b: 1, a: 1}

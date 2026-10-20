@@ -43,23 +43,24 @@ public class CellProteinSystem
     }
     public void ReleaseProducers()
     {
-        foreach (var cell in owner.Grid.All) if (IsProducer(cell)) Release(cell, 4f);
+        foreach (var cell in owner.Grid.All) if (IsProducer(cell)) Release(cell);
     }
     public void FireSprayers()
     {
         foreach (var cell in owner.Grid.All)
         {
             if (cell.type.function != CellType.Function.Spray || owner.Grid.FrontCell(cell) != null) continue;
-            if (cell.proteins.Count > 0) Release(cell, cell.type.spraySpeed);
+            if (cell.proteins.Count > 0) Release(cell);
             else owner.WaterImpulse(-WorldDirection(cell));
         }
     }
-    private void Release(PlacedCell cell, float speed)
+    private void Release(PlacedCell cell)
     {
         if (owner.Grid.FrontCell(cell) != null) return;
         Vector2 direction = WorldDirection(cell);
         Vector2Int footprint = cell.type.FootprintSize();
         Vector2 start = owner.Grid.CellCenter(cell) + direction * (footprint.y * CellGrid.CellSize * 0.5f + 0.8f);
+        float speed = cell.type.projectileSpeed;
         for (int i = 0; i < cell.proteins.Count; i++)
             ProteinProjectile.Spawn(owner, cell, cell.proteins[i], start + direction * i * 0.7f, direction, speed);
         cell.proteins.Clear();
