@@ -362,6 +362,7 @@ GameObject:
   m_Component:
   - component: {fileID: 910000002}
   - component: {fileID: 910000003}
+  - component: {fileID: 910000004}
   m_Layer: 0
   m_Name: GameSceneEntry
   m_TagString: Untagged
@@ -399,6 +400,29 @@ MonoBehaviour:
   cellSlotPrefab: {fileID: 7505339059259607637, guid: d7cbd5b80e11d3446bd220b5cac7202a, type: 3}
   pausePrefab: {fileID: 476774550962076535, guid: 6aab96cca3a0acb40a920de295bb66f5, type: 3}
   font: {fileID: 11400000, guid: 2d4ef2b2dfa88f74fba0b732f951f0a5, type: 2}
+--- !u!114 &910000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 910000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b6b9439a03e3c74e98988592ebb9ae5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyPrefab: {fileID: 1327633266519120271, guid: f6b2a6a68495c1544856a3e39d5c446c, type: 3}
+  enemyRoot: {fileID: 0}
+  spawnInterval: 20
+  maxEnemies: 30
+  spawnMinDistance: 25
+  spawnMaxDistance: 45
+  resetInterval: 180
+  clearNutrients: 1
+  clearEnemies: 1
+  respawnNutrients: 1
+  logEvents: 1
 --- !u!1 &949537150
 GameObject:
   m_ObjectHideFlags: 0
