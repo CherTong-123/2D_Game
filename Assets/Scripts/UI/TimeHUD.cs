@@ -1,5 +1,6 @@
 // ============================================================================
-// TimeHUD.cs：用 TimeNumber 里的数字与冒号拼出游戏时间（MM:SS）。
+// TimeHUD.cs：用 TimeNumber 里的数字与冒号拼出时间 HUD。
+// 支持正向计时与循环倒计时两种模式，可配置位置、缩放和是否显示背景。
 // 资源以整屏 1920x1080 透明 PNG 提供，每个字形位于整屏图的固定像素位置，
 // 因此这里按字形中心做偏移，把整屏贴图当作“图层”叠在画布上。
 // ============================================================================
@@ -23,11 +24,17 @@ public class TimeHUD : MonoBehaviour
     private const float BgFileX = 1116f;
     private const float BgFileY = 176f;
 
-    // 界面上的槽位（1920x1080 参考空间，原点在左下）。
-    // 布局为 分十位 / 分个位 / 冒号 / 秒十位 / 秒个位。
-    private static readonly float[] SlotX = { 838f, 906f, 1014f, 1082f };
-    private const float RowY = 1010f;
-    private const float BgY = 968f; // 底图比数字略低，复刻原图版式
+    // MM:SS 各槽位相对 HUD 中心的水平偏移（全尺寸单位）。
+    private static readonly float[] SlotOffsets = { -122f, -54f, 54f, 122f };
+
+    [Header("布局")]
+    [SerializeField] private Vector2 center = new Vector2(960f, 960f);
+    [SerializeField] private float scale = 1f;
+    [SerializeField] private bool showBackground = true;
+
+    [Header("计时")]
+    [SerializeField] private bool countdown;
+    [SerializeField] private float countdownSeconds = 180f;
 
     [SerializeField] private Sprite[] digits = new Sprite[10];
     [SerializeField] private Sprite colon;
@@ -35,10 +42,19 @@ public class TimeHUD : MonoBehaviour
 
     private readonly Image[] digitImages = new Image[4];
     private float elapsed;
+    private float secondAccumulator;
+    private int countdownRemaining;
     private string lastShown = "";
     private bool initialized;
 
-    public float ElapsedSeconds => elapsed;
+    public void Configure(Vector2 screenCenter, float hudScale, bool withBackground, bool isCountdown, float countdownDuration)
+    {
+        center = screenCenter;
+        scale = hudScale;
+        showBackground = withBackground;
+        countdown = isCountdown;
+        countdownSeconds = Mathf.Max(1f, countdownDuration);
+    }
 
     public void Initialize()
     {
@@ -46,39 +62,57 @@ public class TimeHUD : MonoBehaviour
         initialized = true;
         LoadSprites();
 
-        CreateLayer("TimeBG", background, BgFileX, BgFileY, 960f, BgY);
-        CreateLayer("TimeColon", colon, ColonFileX, ColonFileY, 960f, RowY);
-        for (int i = 0; i < digitImages.Length; i++)
-            digitImages[i] = CreateLayer("TimeDigit" + i, null, DigitFileX[0], DigitFileY, SlotX[i], RowY);
+        countdownRemaining = Mathf.RoundToInt(countdownSeconds);
+        elapsed = 0f;
+        secondAccumulator = 0f;
 
-        Refresh(elapsed);
+        if (showBackground)
+            CreateLayer("TimeBG", background, BgFileX, BgFileY, center.x, center.y - 42f * scale);
+
+        CreateLayer("TimeColon", colon, ColonFileX, ColonFileY, center.x, center.y);
+        for (int i = 0; i < digitImages.Length; i++)
+        {
+            float sx = center.x + SlotOffsets[i] * scale;
+            digitImages[i] = CreateLayer("TimeDigit" + i, null, DigitFileX[0], DigitFileY, sx, center.y);
+        }
+
+        Display(countdown ? countdownRemaining : 0);
     }
 
     private void Update()
     {
         if (!initialized) return;
-        // 使用游戏时间：随游戏速度变化，暂停时 timeScale 归零、计时自动冻结。
-        elapsed += Time.deltaTime;
 
-        int total = Mathf.FloorToInt(elapsed);
-        int minutes = Mathf.Min(total / 60, 99);
-        int seconds = total % 60;
-        string text = minutes.ToString("D2") + ":" + seconds.ToString("D2");
-        if (text == lastShown) return;
-
-        lastShown = text;
-        Refresh(elapsed);
+        if (countdown)
+        {
+            secondAccumulator += Time.deltaTime;
+            while (secondAccumulator >= 1f)
+            {
+                secondAccumulator -= 1f;
+                countdownRemaining--;
+                if (countdownRemaining < 0)
+                    countdownRemaining = Mathf.RoundToInt(countdownSeconds);
+            }
+            Display(countdownRemaining);
+        }
+        else
+        {
+            elapsed += Time.deltaTime;
+            Display(Mathf.FloorToInt(elapsed));
+        }
     }
 
-    private void Refresh(float time)
+    private void Display(int totalSeconds)
     {
-        int total = Mathf.FloorToInt(time);
-        int minutes = Mathf.Min(total / 60, 99);
-        int seconds = total % 60;
-        int[] values = { minutes / 10, minutes % 10, seconds / 10, seconds % 10 };
+        int minutes = Mathf.Min(totalSeconds / 60, 99);
+        int seconds = totalSeconds % 60;
+        string text = minutes.ToString("D2") + ":" + seconds.ToString("D2");
+        if (text == lastShown) return;
+        lastShown = text;
 
+        int[] values = { minutes / 10, minutes % 10, seconds / 10, seconds % 10 };
         for (int i = 0; i < digitImages.Length; i++)
-            SetDigit(digitImages[i], values[i], SlotX[i], RowY);
+            SetDigit(digitImages[i], values[i], center.x + SlotOffsets[i] * scale, center.y);
     }
 
     private void SetDigit(Image image, int value, float sx, float sy)
@@ -102,7 +136,7 @@ public class TimeHUD : MonoBehaviour
         rect.SetParent(transform, false);
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(RefWidth, RefHeight);
+        rect.sizeDelta = new Vector2(RefWidth * scale, RefHeight * scale);
         rect.anchoredPosition = ScreenToAnchored(sx, sy, fileX, fileY);
 
         var image = go.AddComponent<Image>();
@@ -113,9 +147,11 @@ public class TimeHUD : MonoBehaviour
         return image;
     }
 
-    private static Vector2 ScreenToAnchored(float sx, float sy, float fileX, float fileY)
+    private Vector2 ScreenToAnchored(float sx, float sy, float fileX, float fileY)
     {
-        return new Vector2(sx - fileX, sy - RefHeight + fileY);
+        float dx = (fileX - 960f) * scale;
+        float dy = (540f - fileY) * scale;
+        return new Vector2(sx - 960f - dx, sy - 540f - dy);
     }
 
     private void LoadSprites()
