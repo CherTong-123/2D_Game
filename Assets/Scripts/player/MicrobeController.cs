@@ -14,7 +14,7 @@ public class MicrobeController : MonoBehaviour, INutrientEater
     public CellType mainCellType;
     [Header("能量")]
     public float energy = 50f;
-    public float energyLimit = 100f;
+    public float energyLimit = 300f;
     public float energyUse = 1f;
     [Range(0, 1)] public float idleCostFactor = 0.25f;
     public bool drainEnergy = true;
