@@ -11,10 +11,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
   m_Name: SprayCell
-  m_EditorClassIdentifier:
-  id: "spraycell"
-  displayName: "\u55b7\u5c04\u7ec6\u80de"
-  description: "\u6700\u591a\u50a8\u5b58 3 \u679a\u86cb\u767d\uff0cF \u4ee5 20 \u5355\u4f4d/\u79d2\u55b7\u5c04\u3002\u65e0\u86cb\u767d\u65f6\u5411\u53cd\u65b9\u5411\u63a8\u8fdb\uff1b\u671d\u5411\u7ec6\u80de\u65f6\u81ea\u52a8\u4f20\u9012\u3002"
+  m_EditorClassIdentifier: 
+  id: spraycell
+  displayName: "\u55B7\u5C04\u7EC6\u80DE"
+  description: "\u6700\u591A\u50A8\u5B58 3 \u679A\u86CB\u767D\uFF0CF \u4EE5 20 \u5355\u4F4D/\u79D2\u55B7\u5C04\u3002\u65E0\u86CB\u767D\u65F6\u5411\u53CD\u65B9\u5411\u63A8\u8FDB\uFF1B\u671D\u5411\u7EC6\u80DE\u65F6\u81EA\u52A8\u4F20\u9012\u3002"
   hp: 150
   cellsize: 1
   pmt: 1
@@ -33,7 +33,7 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowDuration: 2
   spraySpeed: 20
-  icon: {fileID: 0}
-  body: {fileID: 0}
+  icon: {fileID: 21300000, guid: 8e7b9347fffa4ab428fc28da7a648562, type: 3}
+  body: {fileID: 21300000, guid: 8e7b9347fffa4ab428fc28da7a648562, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
   placeholderColor: {r: 0.3, g: 1, b: 0.8, a: 1}

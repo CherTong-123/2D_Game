@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
   m_Name: SpikeCell
   m_EditorClassIdentifier: 
-  id: "spikecell"
-  displayName: "\u5c16\u523a\u7ec6\u80de"
-  description: "\u63a5\u89e6\u654c\u4eba\u9020\u6210 100 \u70b9\u4f24\u5bb3\uff1b\u524d\u65b9\u5fc5\u987b\u7559\u7a7a\u3002"
+  id: spikecell
+  displayName: "\u5C16\u523A\u7EC6\u80DE"
+  description: "\u63A5\u89E6\u654C\u4EBA\u9020\u6210 100 \u70B9\u4F24\u5BB3\uFF1B\u524D\u65B9\u5FC5\u987B\u7559\u7A7A\u3002"
   hp: 150
   cellsize: 2
   pmt: 1
@@ -22,7 +22,7 @@ MonoBehaviour:
   cost: 100
   divity: 1
   link: 0
-  eat: 0
+  eat: 1
   function: 1
   storageBonus: 100
   movementBonus: 0.15
