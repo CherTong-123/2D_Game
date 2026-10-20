@@ -18,6 +18,16 @@ public class PauseController : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.Tab) && !PauseMenu.activeSelf) split.SetOpen(!split.IsOpen);
     }
-    public void PauseGame() { PauseMenu.SetActive(true); Intera_Get.Instance.SetMenuPaused(true); }
-    public void ResumeGame() { PauseMenu.SetActive(false); Intera_Get.Instance.SetMenuPaused(false); }
+    public void PauseGame(bool playSound = true)
+    {
+        PauseMenu.SetActive(true);
+        Intera_Get.Instance.SetMenuPaused(true);
+        if (playSound) AudioManager.Instance.PlayPauseOpen();
+    }
+    public void ResumeGame()
+    {
+        PauseMenu.SetActive(false);
+        Intera_Get.Instance.SetMenuPaused(false);
+        AudioManager.Instance.PlayPauseClose();
+    }
 }

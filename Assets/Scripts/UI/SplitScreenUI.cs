@@ -115,7 +115,11 @@ public class SplitScreenUI : MonoBehaviour
         if (Selected != null)
         {
             Vector2Int anchor = grid - Selected.FootprintSize(rotation) / 2;
-            if (microbe.TryPlace(Selected, anchor, rotation, out reason)) reason = "放置成功";
+            if (microbe.TryPlace(Selected, anchor, rotation, out reason))
+            {
+                reason = "放置成功";
+                AudioManager.Instance.PlayCellSplit();
+            }
             return;
         }
         var hit = microbe.Grid.CellAt(grid);

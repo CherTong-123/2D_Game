@@ -24,6 +24,7 @@ public class GameSceneEntry : MonoBehaviour
     private IEnumerator Start()
     {
         Intera_Get.Instance.ResetPause();
+        AudioManager.Instance.PlayGameMusic();
         player = FindObjectOfType<MicrobeController>();
         var camera = Camera.main;
         yield return SceneManager.LoadSceneAsync("Divid_Scene", LoadSceneMode.Additive);
@@ -105,8 +106,10 @@ public class GameSceneEntry : MonoBehaviour
     }
     private void OnDeath()
     {
+        AudioManager.Instance.StopMusic();
+        AudioManager.Instance.PlayGameOver();
         split.SetOpen(false);
-        pause.PauseGame();
+        pause.PauseGame(false);
     }
     private void OnDestroy() { if (player != null) player.Died -= OnDeath; }
 }
