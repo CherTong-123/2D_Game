@@ -11,10 +11,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
   m_Name: TransportCell
-  m_EditorClassIdentifier:
-  id: "transcell"
-  displayName: "\u4f20\u8f93\u7ec6\u80de"
-  description: "\u53ef\u4ee5\u4f20\u9012\u86cb\u767d\u3002"
+  m_EditorClassIdentifier: 
+  id: transcell
+  displayName: "\u4F20\u8F93\u7EC6\u80DE"
+  description: "\u53EF\u4EE5\u4F20\u9012\u86CB\u767D\u3002"
   hp: 50
   cellsize: 1
   pmt: 2
@@ -33,7 +33,7 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowDuration: 2
   spraySpeed: 20
-  icon: {fileID: 0}
-  body: {fileID: 0}
+  icon: {fileID: -189787369, guid: 9167b7c363ebecf47a2bae3947e2dccd, type: 3}
+  body: {fileID: -189787369, guid: 9167b7c363ebecf47a2bae3947e2dccd, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
   placeholderColor: {r: 0.7, g: 1, b: 0.55, a: 1}

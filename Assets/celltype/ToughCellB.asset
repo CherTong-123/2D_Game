@@ -11,10 +11,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bf3e02b28b89ab344a6336f545270500, type: 3}
   m_Name: ToughCellB
-  m_EditorClassIdentifier:
-  id: "toughcell_b"
-  displayName: "\u97e7\u6027\u7ec6\u80deb"
-  description: "\u5360 1\u00d72 \u683c\uff0c\u751f\u547d\u8f83\u9ad8\uff0c\u65e0\u6cd5\u4f20\u9012\u86cb\u767d\u3002"
+  m_EditorClassIdentifier: 
+  id: toughcell_b
+  displayName: "\u97E7\u6027\u7EC6\u80DEb"
+  description: "\u5360 1\xD72 \u683C\uFF0C\u751F\u547D\u8F83\u9AD8\uFF0C\u65E0\u6CD5\u4F20\u9012\u86CB\u767D\u3002"
   hp: 300
   cellsize: 2
   pmt: 0
@@ -33,7 +33,7 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowDuration: 2
   spraySpeed: 20
-  icon: {fileID: 0}
-  body: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4494946d9475c7848a3227df529311dc, type: 3}
+  body: {fileID: 21300000, guid: ae54a30aeca25c24d88acdb36436cac5, type: 3}
   tint: {r: 1, g: 1, b: 1, a: 1}
   placeholderColor: {r: 0.45, g: 0.45, b: 0.6, a: 1}

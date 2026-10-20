@@ -18,6 +18,8 @@ public class GameSceneEntry : MonoBehaviour
     private TMP_Text hud;
     private SplitScreenUI split;
     private PauseController pause;
+    private TimeHUD timeHud;
+    private ScoreHUD scoreHud;
 
     private IEnumerator Start()
     {
@@ -80,6 +82,17 @@ public class GameSceneEntry : MonoBehaviour
         pause.Configure(menu, split, player);
         hud = GameUIFactory.Text(canvas.transform, "PlayerStatus", font, "", 22);
         GameUIFactory.Rect(hud.rectTransform, new Vector2(0, 1), Vector2.one, new Vector2(20, -84), new Vector2(-20, -16));
+
+        var timeHudObject = new GameObject("TimeHUD", typeof(RectTransform));
+        timeHudObject.transform.SetParent(canvas.transform, false);
+        timeHud = timeHudObject.AddComponent<TimeHUD>();
+        timeHud.Initialize();
+
+        var scoreHudObject = new GameObject("ScoreHUD", typeof(RectTransform));
+        scoreHudObject.transform.SetParent(canvas.transform, false);
+        scoreHud = scoreHudObject.AddComponent<ScoreHUD>();
+        scoreHud.Initialize();
+
         player.Died += OnDeath;
     }
 
