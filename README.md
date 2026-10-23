@@ -29,4 +29,9 @@
 
 <img width="1920" height="1080" alt="Image Sequence_001_1160" src="https://github.com/user-attachments/assets/e1b02dc4-df85-4983-8dca-9ee09883f6b7" />
 
+## 开发者
+
+_**策划：** 溜号困、钴蓝玻璃
+_**程序：** CherTong、Sakura
+_**美术：** 骨头、呜吧哦、张三
 
